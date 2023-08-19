@@ -1,125 +1,337 @@
-import 'package:flutter/material.dart';
+import 'dart:collection';
 
-void main() {
-  runApp(const MyApp());
-}
+import 'package:flutter/gestures.dart';
 
-class MyApp extends StatelessWidget {
-  const MyApp({super.key});
+//import 'package:flutter/material.dart' show Color;
+import 'package:flutter/services.dart';
+import 'package:flutter/widgets.dart';
 
-  // This widget is the root of your application.
+void main() => runApp(const MyWidgetsApp());
+
+class MyWidgetsApp extends StatelessWidget {
+  const MyWidgetsApp({super.key});
+
   @override
   Widget build(BuildContext context) {
-    return MaterialApp(
-      title: 'Flutter Demo',
-      theme: ThemeData(
-        // This is the theme of your application.
-        //
-        // TRY THIS: Try running your application with "flutter run". You'll see
-        // the application has a purple toolbar. Then, without quitting the app,
-        // try changing the seedColor in the colorScheme below to Colors.green
-        // and then invoke "hot reload" (save your changes or press the "hot
-        // reload" button in a Flutter-supported IDE, or press "r" if you used
-        // the command line to start the app).
-        //
-        // Notice that the counter didn't reset back to zero; the application
-        // state is not lost during the reload. To reset the state, use hot
-        // restart instead.
-        //
-        // This works for code too, not just values: Most code changes can be
-        // tested with just a hot reload.
-        colorScheme: ColorScheme.fromSeed(seedColor: Colors.deepPurple),
-        useMaterial3: true,
+    return Container(
+      decoration: const BoxDecoration(
+        gradient: LinearGradient(
+          begin: Alignment.topCenter,
+          end: Alignment.bottomCenter,
+          colors: [
+            Color(0xFF000000),
+            Color(0xFF00008C),
+          ],
+        ),
       ),
-      home: const MyHomePage(title: 'Flutter Demo Home Page'),
+      child: WidgetsApp(
+        onGenerateRoute: _generateRoute,
+        textStyle: const TextStyle(
+          fontFamily: "Droid Sans",
+        ),
+        initialRoute: "/",
+        color: const Color(0xFFFFFF00),
+      ),
+    );
+  }
+
+  Route _generateRoute(RouteSettings settings) {
+    switch (settings.name) {
+      case "/":
+        return makePage(
+          "Home Page",
+          (context) => [
+            WAButton(
+              caption: "Go to First Page",
+              onClick: () => Navigator.of(context).pushNamed("/first"),
+            ),
+            const Padding(padding: EdgeInsets.all(10.0)),
+            WAButton(
+              caption: "Invalid Route",
+              onClick: () => Navigator.of(context).pushNamed("/abcd"),
+            ),
+            const Padding(padding: EdgeInsets.all(10.0)),
+            WAButton(
+              caption: "Quit",
+              onClick: () => SystemNavigator.pop(),
+            ),
+            const Padding(padding: EdgeInsets.all(10.0)),
+            const WATextEdit(),
+          ],
+        );
+      case "/first":
+        return makePage(
+          "First Page",
+          (context) => [
+            WAButton(
+              caption: "Back",
+              onClick: () => Navigator.of(context).pop(),
+            ),
+          ],
+        );
+      default:
+        return makePage(
+          "I AM ERROR.",
+          (context) => [
+            WAButton(
+              caption: "Back",
+              onClick: () => Navigator.of(context).pop(),
+            )
+          ],
+        );
+    }
+  }
+}
+
+PageRouteBuilder<dynamic> makePage(
+    String title, List<Widget> Function(BuildContext) buildWidgets) {
+  return PageRouteBuilder(
+    transitionDuration: const Duration(milliseconds: 100),
+    reverseTransitionDuration: const Duration(milliseconds: 100),
+    pageBuilder: (
+      BuildContext context,
+      Animation<double> animation,
+      Animation<double> secondaryAnimation,
+    ) {
+      return FocusScope(
+        child: Column(
+          mainAxisAlignment: MainAxisAlignment.center,
+          children: <Widget>[
+                Text(
+                  title,
+                  style: const TextStyle(fontWeight: FontWeight.bold),
+                ),
+                const Padding(padding: EdgeInsets.all(10.0)),
+              ] +
+              buildWidgets(context),
+        ),
+      );
+    },
+    transitionsBuilder: myTransitionBuilder,
+  );
+}
+
+Widget myTransitionBuilder(
+  _,
+  Animation<double> animation,
+  Animation<double> second,
+  Widget child,
+) {
+  return FadeTransition(
+    opacity: animation,
+    child: FadeTransition(
+      opacity: Tween<double>(begin: 1.0, end: 0.0).animate(second),
+      child: child,
+    ),
+  );
+}
+
+class WAButton extends StatefulWidget {
+  const WAButton({
+    super.key,
+    required this.caption,
+    required this.onClick,
+  });
+
+  final String caption;
+  final void Function() onClick;
+
+  @override
+  State<WAButton> createState() => _WAButtonState();
+}
+
+class _WAButtonState extends State<WAButton> {
+  bool _hover = false;
+
+  @override
+  Widget build(BuildContext context) {
+    return GestureDetector(
+      onTap: widget.onClick,
+      child: Focus(
+        child: MouseRegion(
+          onEnter: (_) {
+            setState(() {
+              _hover = true;
+            });
+          },
+          onExit: (_) {
+            setState(() {
+              _hover = false;
+            });
+          },
+          child: Builder(
+            builder: (BuildContext context) {
+              final FocusNode focusNode = Focus.of(context);
+              final bool hasFocus = focusNode.hasFocus;
+              return Container(
+                padding: const EdgeInsets.all(10.0),
+                decoration: BoxDecoration(
+                  color: const Color(0xFF000000),
+                  border: Border.all(
+                    color: hasFocus || _hover
+                        ? const Color(0xFFFFFFFF)
+                        : const Color(0xFF808080),
+                    width: 2,
+                  ),
+                  borderRadius: const BorderRadius.all(Radius.circular(3)),
+                ),
+                child: Text(
+                  widget.caption,
+                  style: const TextStyle(
+                    color: Color(0xFF808080),
+                    fontWeight: FontWeight.bold,
+                  ),
+                ),
+              );
+            },
+          ),
+        ),
+      ),
     );
   }
 }
 
-class MyHomePage extends StatefulWidget {
-  const MyHomePage({super.key, required this.title});
-
-  // This widget is the home page of your application. It is stateful, meaning
-  // that it has a State object (defined below) that contains fields that affect
-  // how it looks.
-
-  // This class is the configuration for the state. It holds the values (in this
-  // case the title) provided by the parent (in this case the App widget) and
-  // used by the build method of the State. Fields in a Widget subclass are
-  // always marked "final".
-
-  final String title;
+class WATextEdit extends StatefulWidget {
+  const WATextEdit({
+    super.key,
+  });
 
   @override
-  State<MyHomePage> createState() => _MyHomePageState();
+  State<WATextEdit> createState() => _WATextEditState();
 }
 
-class _MyHomePageState extends State<MyHomePage> {
-  int _counter = 0;
+TextSpan transformTextSpanFragments(
+  TextSpan span,
+  List<int> stopPoints,
+  TextSpan Function(TextRange, TextSpan) spanTransformer,
+) {
+  /// Copy `span`, except setting `text` to null and `children` to the given list.
+  TextSpan cloneTextSpanWithChildren(TextSpan span, List<InlineSpan> children) {
+    return TextSpan(
+      text: null,
+      children: children,
+      style: span.style,
+      recognizer: span.recognizer,
+      mouseCursor: span.mouseCursor,
+      onEnter: span.onEnter,
+      onExit: span.onExit,
+      semanticsLabel: span.semanticsLabel,
+      locale: span.locale,
+      spellOut: span.spellOut,
+    );
+  }
 
-  void _incrementCounter() {
-    setState(() {
-      // This call to setState tells the Flutter framework that something has
-      // changed in this State, which causes it to rerun the build method below
-      // so that the display can reflect the updated values. If we changed
-      // _counter without calling setState(), then the build method would not be
-      // called again, and so nothing would appear to happen.
-      _counter++;
-    });
+  int pos = 0;
+  ListQueue<int> stopPointQueue = ListQueue.of(stopPoints);
+  InlineSpan visit(InlineSpan span) {
+    if (span is TextSpan) {
+      while (stopPointQueue.isNotEmpty && stopPointQueue.first < pos) {
+        stopPointQueue.removeFirst();
+      }
+      if (span.text != null) {
+        int end = pos + span.text!.length;
+        // Fragment this TextSpan first, if necessary.
+        if (stopPointQueue.isNotEmpty && stopPointQueue.first < end) {
+          List<InlineSpan> children = [];
+          int p0 = 0;
+          while (stopPointQueue.isNotEmpty && stopPointQueue.first < end) {
+            int p1 = stopPointQueue.removeFirst() - pos;
+            children.add(TextSpan(text: span.text!.substring(p0, p1)));
+            p0 = p1;
+          }
+          if (p0 < end) {
+            children.add(TextSpan(text: span.text!.substring(p0, end)));
+          }
+          children = children + (span.children ?? []);
+          return visit(cloneTextSpanWithChildren(span, children));
+        }
+        var start = pos;
+        pos = end;
+        span = spanTransformer(TextRange(start: start, end: end), span);
+      } else if (span.children != null) {
+        var children = List.of(span.children!.map(visit));
+        span = cloneTextSpanWithChildren(span, children);
+      }
+    }
+    return span;
+  }
+
+  return visit(span) as TextSpan;
+}
+
+class _WATextEditingController extends TextEditingController {
+  @override
+  TextSpan buildTextSpan({
+    required BuildContext context,
+    TextStyle? style,
+    required bool withComposing,
+  }) {
+    TextSelection selection = this.selection;
+    TextSpan span = super.buildTextSpan(
+        context: context, style: style, withComposing: withComposing);
+    if (!selection.isCollapsed) {
+      span = transformTextSpanFragments(span, [selection.start, selection.end], (TextRange range, TextSpan span) {
+        if (range.start >= selection.start && range.end <= selection.end) {
+          return TextSpan(
+            style: const TextStyle(color: Color(0xFF000000)),
+            children: [span],
+          );
+        }
+        return span;
+      });
+    }
+    return span;
+  }
+}
+
+class _WATextEditState extends State<WATextEdit> {
+  late TextEditingController controller;
+  late FocusNode focusNode;
+  bool _hover = false;
+
+  @override
+  void initState() {
+    super.initState();
+    controller = _WATextEditingController();
+    focusNode = FocusNode();
   }
 
   @override
   Widget build(BuildContext context) {
-    // This method is rerun every time setState is called, for instance as done
-    // by the _incrementCounter method above.
-    //
-    // The Flutter framework has been optimized to make rerunning build methods
-    // fast, so that you can just rebuild anything that needs updating rather
-    // than having to individually change instances of widgets.
-    return Scaffold(
-      appBar: AppBar(
-        // TRY THIS: Try changing the color here to a specific color (to
-        // Colors.amber, perhaps?) and trigger a hot reload to see the AppBar
-        // change color while the other colors stay the same.
-        backgroundColor: Theme.of(context).colorScheme.inversePrimary,
-        // Here we take the value from the MyHomePage object that was created by
-        // the App.build method, and use it to set our appbar title.
-        title: Text(widget.title),
-      ),
-      body: Center(
-        // Center is a layout widget. It takes a single child and positions it
-        // in the middle of the parent.
-        child: Column(
-          // Column is also a layout widget. It takes a list of children and
-          // arranges them vertically. By default, it sizes itself to fit its
-          // children horizontally, and tries to be as tall as its parent.
-          //
-          // Column has various properties to control how it sizes itself and
-          // how it positions its children. Here we use mainAxisAlignment to
-          // center the children vertically; the main axis here is the vertical
-          // axis because Columns are vertical (the cross axis would be
-          // horizontal).
-          //
-          // TRY THIS: Invoke "debug painting" (choose the "Toggle Debug Paint"
-          // action in the IDE, or press "p" in the console), to see the
-          // wireframe for each widget.
-          mainAxisAlignment: MainAxisAlignment.center,
-          children: <Widget>[
-            const Text(
-              'You have pushed the button this many times:',
+    return MouseRegion(
+      onEnter: (_) => setState(() {
+        _hover = true;
+      }),
+      onExit: (_) => setState(() {
+        _hover = false;
+      }),
+      child: Builder(
+        builder: (BuildContext context) {
+          final bool hasFocus = focusNode.hasFocus;
+          return Container(
+            padding: const EdgeInsets.all(10.0),
+            decoration: BoxDecoration(
+              color: const Color(0xFF000000),
+              border: Border.all(
+                color: hasFocus || _hover
+                    ? const Color(0xFFFFFFFF)
+                    : const Color(0xFF808080),
+                width: 1,
+              ),
             ),
-            Text(
-              '$_counter',
-              style: Theme.of(context).textTheme.headlineMedium,
+            child: EditableText(
+              controller: controller,
+              focusNode: focusNode,
+              dragStartBehavior: DragStartBehavior.down,
+              style: const TextStyle(),
+              cursorColor: const Color(0xFFFFFFFF),
+              backgroundCursorColor: const Color(0xFF123456),
+              // TODO
+              selectionColor: const Color(0xFFFFFFFF),
             ),
-          ],
-        ),
+          );
+        },
       ),
-      floatingActionButton: FloatingActionButton(
-        onPressed: _incrementCounter,
-        tooltip: 'Increment',
-        child: const Icon(Icons.add),
-      ), // This trailing comma makes auto-formatting nicer for build methods.
     );
   }
 }
