@@ -142,7 +142,7 @@ class _WATextEditState extends State<WATextEdit> {
       onEnter: (_) => setState(() => _hover = true),
       onExit: (_) => setState(() => _hover = false),
       child: GestureDetector(
-        onTap: live ? () => focusNode.requestFocus() : null,
+        onTapDown: live ? (_) => focusNode.requestFocus() : null,
         child: Container(
           width: widget.width,
           padding: EdgeInsets.symmetric(

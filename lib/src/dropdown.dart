@@ -62,10 +62,8 @@ class _WADropdownState extends State<WADropdown> {
               items: widget.items,
               selectedIndex: widget.selectedIndex,
               width: anchorSize.width,
-              onPick: (i) {
-                widget.onSelected(i);
-                _close();
-              },
+              onSelect: widget.onSelected,
+              onClose: _close,
             ),
           ),
         ],
@@ -82,6 +80,19 @@ class _WADropdownState extends State<WADropdown> {
   }
 
   @override
+  void didUpdateWidget(WADropdown old) {
+    super.didUpdateWidget(old);
+    // The overlay closure reads widget.selectedIndex/items, but OverlayEntry
+    // does not rebuild on parent setState — push it manually after the
+    // current build phase finishes (markNeedsBuild is illegal mid-build).
+    if (_overlay != null) {
+      WidgetsBinding.instance.addPostFrameCallback((_) {
+        _overlay?.markNeedsBuild();
+      });
+    }
+  }
+
+  @override
   void dispose() {
     _overlay?.remove();
     _focusNode.dispose();
@@ -94,6 +105,9 @@ class _WADropdownState extends State<WADropdown> {
       enabled: widget.enabled,
       onActivate: _toggle,
       focusNode: _focusNode,
+      // Dropdown anchor opens on mouse-down (selection-style, like text edit
+      // focus), not on the mouse-up + drag-away-to-cancel that buttons use.
+      activateOnDown: true,
       builder: (context, hover, pressed, focused) {
         // Opening the dropdown drops the anchor back to Normal; Active is
         // "keyboard focus with list closed".
@@ -174,30 +188,25 @@ class _WADropdownState extends State<WADropdown> {
   }
 }
 
-class _DropdownMenu extends StatefulWidget {
+class _DropdownMenu extends StatelessWidget {
   const _DropdownMenu({
     required this.items,
     required this.selectedIndex,
     required this.width,
-    required this.onPick,
+    required this.onSelect,
+    required this.onClose,
   });
 
   final List<String> items;
   final int selectedIndex;
   final double width;
-  final ValueChanged<int> onPick;
-
-  @override
-  State<_DropdownMenu> createState() => _DropdownMenuState();
-}
-
-class _DropdownMenuState extends State<_DropdownMenu> {
-  int? _hoverIndex;
+  final ValueChanged<int> onSelect;
+  final VoidCallback onClose;
 
   @override
   Widget build(BuildContext context) {
     return Container(
-      width: widget.width,
+      width: width,
       decoration: BoxDecoration(
         color: WAColors.darkBlue,
         // Open menu's outer border is grey, same as a regular list box.
@@ -205,20 +214,20 @@ class _DropdownMenuState extends State<_DropdownMenu> {
       ),
       child: Column(
         mainAxisSize: MainAxisSize.min,
-        children: List.generate(widget.items.length, (i) {
-          final bool selected = i == widget.selectedIndex;
-          final bool hovered = i == _hoverIndex;
+        children: List.generate(items.length, (i) {
+          // WA's menu has no hover highlight; only the currently selected row
+          // is painted red. Mouse moves do not preview a new selection.
+          final bool selected = i == selectedIndex;
           final Color bg =
-              hovered || selected ? WAColors.selectionRed : WAColors.darkBlue;
+              selected ? WAColors.selectionRed : WAColors.darkBlue;
           return MouseRegion(
             cursor: SystemMouseCursors.click,
-            onEnter: (_) => setState(() => _hoverIndex = i),
-            onExit: (_) => setState(() {
-              if (_hoverIndex == i) _hoverIndex = null;
-            }),
             child: GestureDetector(
               behavior: HitTestBehavior.opaque,
-              onTap: () => widget.onPick(i),
+              // WA fires on mouse-down (no drag-away-to-cancel). Pressing an
+              // unselected row commits the selection but keeps the menu open;
+              // pressing the already-selected row closes it.
+              onTapDown: (_) => selected ? onClose() : onSelect(i),
               child: Container(
                 height: WAFonts.rowHeight,
                 color: bg,
@@ -227,7 +236,7 @@ class _DropdownMenuState extends State<_DropdownMenu> {
                 ),
                 alignment: Alignment.centerLeft,
                 child: Text(
-                  widget.items[i],
+                  items[i],
                   style: WAFonts.bodyOn(WAColors.white),
                 ),
               ),

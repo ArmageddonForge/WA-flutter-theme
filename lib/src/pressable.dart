@@ -5,9 +5,14 @@ import 'package:flutter/widgets.dart';
 /// shares. The builder receives the current hover, pressed, and focused flags
 /// and returns the visual.
 ///
-/// `onActivate` is fired on tap and (when [activateOnKeyboard] is true, the
-/// default) on Space or Enter while focused. The handlers are all gated on
-/// [enabled]; a disabled pressable never enters hover or pressed state.
+/// `onActivate` fires on mouse-UP by default (with drag-away-to-cancel,
+/// matching classic Windows push-button behaviour: the Pressed face appears
+/// on down, but the click only commits if the pointer is still inside on
+/// release). Set [activateOnDown] for selection-style controls (dropdown
+/// anchors, list rows) that commit immediately on press with no cancel.
+/// Keyboard Space/Enter activation is gated by [activateOnKeyboard] (default
+/// true). The handlers are all gated on [enabled]; a disabled pressable
+/// never enters hover or pressed state.
 class WAPressable extends StatefulWidget {
   const WAPressable({
     super.key,
@@ -17,6 +22,7 @@ class WAPressable extends StatefulWidget {
     this.focusNode,
     this.cursor = SystemMouseCursors.click,
     this.activateOnKeyboard = true,
+    this.activateOnDown = false,
   });
 
   final bool enabled;
@@ -30,6 +36,7 @@ class WAPressable extends StatefulWidget {
   final FocusNode? focusNode;
   final MouseCursor cursor;
   final bool activateOnKeyboard;
+  final bool activateOnDown;
 
   @override
   State<WAPressable> createState() => _WAPressableState();
@@ -47,10 +54,17 @@ class _WAPressableState extends State<WAPressable> {
       onEnter: (_) => setState(() => _hover = true),
       onExit: (_) => setState(() => _hover = false),
       child: GestureDetector(
-        onTapDown: live ? (_) => setState(() => _pressed = true) : null,
+        onTapDown: live
+            ? (_) {
+                setState(() => _pressed = true);
+                if (widget.activateOnDown) widget.onActivate();
+              }
+            : null,
         onTapUp: live ? (_) => setState(() => _pressed = false) : null,
         onTapCancel: live ? () => setState(() => _pressed = false) : null,
-        onTap: live ? widget.onActivate : null,
+        // Mouse-up commit with drag-away-to-cancel: GestureDetector.onTap
+        // only fires if the release lands inside the widget.
+        onTap: live && !widget.activateOnDown ? widget.onActivate : null,
         child: Focus(
           focusNode: widget.focusNode,
           canRequestFocus: live,

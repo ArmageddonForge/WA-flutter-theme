@@ -171,12 +171,15 @@ class _ScrollbarButtonState extends State<_ScrollbarButton> {
     final Color glyph =
         widget.enabled ? WAColors.grey : WAColors.disabled;
     return GestureDetector(
-      onTapDown:
-          widget.enabled ? (_) => setState(() => _pressed = true) : null,
+      onTapDown: widget.enabled
+          ? (_) {
+              setState(() => _pressed = true);
+              widget.onTap();
+            }
+          : null,
       onTapUp: widget.enabled ? (_) => setState(() => _pressed = false) : null,
       onTapCancel:
           widget.enabled ? () => setState(() => _pressed = false) : null,
-      onTap: widget.enabled ? widget.onTap : null,
       child: Container(
         width: waPx(13),
         height: waPx(18),
