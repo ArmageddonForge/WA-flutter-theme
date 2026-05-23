@@ -3,6 +3,7 @@ import 'dart:collection';
 import 'package:flutter/gestures.dart';
 import 'package:flutter/widgets.dart';
 
+import 'disable.dart';
 import 'theme.dart';
 
 class WATextEdit extends StatefulWidget {
@@ -10,10 +11,12 @@ class WATextEdit extends StatefulWidget {
     super.key,
     this.width,
     this.enabled = true,
+    this.initialText,
   });
 
   final double? width;
   final bool enabled;
+  final String? initialText;
 
   @override
   State<WATextEdit> createState() => _WATextEditState();
@@ -114,6 +117,7 @@ class _WATextEditState extends State<WATextEdit> {
   void initState() {
     super.initState();
     controller = _WATextEditingController();
+    if (widget.initialText != null) controller.text = widget.initialText!;
     focusNode = FocusNode();
     focusNode.addListener(() => setState(() {}));
   }
@@ -129,44 +133,52 @@ class _WATextEditState extends State<WATextEdit> {
   Widget build(BuildContext context) {
     final bool live = widget.enabled;
     final bool hasFocus = focusNode.hasFocus;
-    final Color borderColor = !live
-        ? WAColors.disabled
-        : hasFocus
-            ? WAColors.yellow
-            : _hover
-                ? WAColors.white
-                : WAColors.grey;
-    final Color textColor = !live ? WAColors.disabled : WAColors.white;
-    return MouseRegion(
-      cursor: live ? SystemMouseCursors.text : SystemMouseCursors.basic,
-      onEnter: (_) => setState(() => _hover = true),
-      onExit: (_) => setState(() => _hover = false),
-      child: GestureDetector(
-        onTapDown: live ? (_) => focusNode.requestFocus() : null,
-        child: Container(
-          width: widget.width,
-          padding: EdgeInsets.symmetric(
-            horizontal: WAMetrics.controlPadH,
-            vertical: WAMetrics.controlPadV,
-          ),
-          decoration: BoxDecoration(
-            // Field interior is black at rest, dark blue only while
-            // keyboard-active (typing).
-            color: hasFocus ? WAColors.darkBlue : WAColors.black,
-            border: Border.all(
-              color: borderColor,
-              width: WAMetrics.borderWidth,
+    final Color borderColor = hasFocus
+        ? WAColors.yellow
+        : _hover
+            ? WAColors.white
+            : WAColors.grey;
+    return WADisable(
+      disabled: !live,
+      // Edit-box variant: off-pixels render opaque black (palette-0) instead of
+      // transparent, so the field still reads as a field even when disabled.
+      background: WAColors.black,
+      child: MouseRegion(
+        cursor: live ? SystemMouseCursors.text : SystemMouseCursors.basic,
+        onEnter: (_) => setState(() => _hover = true),
+        onExit: (_) => setState(() => _hover = false),
+        child: GestureDetector(
+          onTapDown: live ? (_) => focusNode.requestFocus() : null,
+          child: Container(
+            width: widget.width,
+            padding: EdgeInsets.symmetric(
+              horizontal: WAMetrics.controlPadH,
+              vertical: WAMetrics.controlPadV,
             ),
-          ),
-          child: EditableText(
-            controller: controller,
-            focusNode: focusNode,
-            readOnly: !live,
-            dragStartBehavior: DragStartBehavior.down,
-            style: WAFonts.bodyOn(textColor),
-            cursorColor: WAColors.pink,
-            backgroundCursorColor: WAColors.grey,
-            selectionColor: WAColors.white,
+            decoration: BoxDecoration(
+              // Field interior is black at rest, dark blue only while
+              // keyboard-active (typing).
+              color: hasFocus ? WAColors.darkBlue : WAColors.black,
+              border: Border.all(
+                color: borderColor,
+                width: WAMetrics.borderWidth,
+              ),
+            ),
+            child: EditableText(
+              controller: controller,
+              focusNode: focusNode,
+              readOnly: !live,
+              dragStartBehavior: DragStartBehavior.down,
+              // Text is grey at rest (Normal + Highlighted), white only while
+              // focused (Active), matching WA's edit-control rendering. The
+              // hover boundary only changes the frame border; text colour
+              // does not promote until focus.
+              style:
+                  WAFonts.bodyOn(hasFocus ? WAColors.white : WAColors.grey),
+              cursorColor: WAColors.pink,
+              backgroundCursorColor: WAColors.grey,
+              selectionColor: WAColors.white,
+            ),
           ),
         ),
       ),

@@ -16,9 +16,6 @@ class WAColors {
   static const Color selectionRed = Color(0xFFFF0000);
   static const Color pink = Color(0xFFFEB6A8);
 
-  /// Used for both text and border on any disabled control.
-  static const Color disabled = Color(0xFF404040);
-
   /// Vertical gradient used for the background of full-screen menus.
   static const Gradient backgroundGradient = LinearGradient(
     begin: Alignment.topCenter,

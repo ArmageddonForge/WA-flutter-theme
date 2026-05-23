@@ -1,6 +1,7 @@
 import 'package:flutter/services.dart';
 import 'package:flutter/widgets.dart';
 
+import 'disable.dart';
 import 'theme.dart';
 
 class WAListBox extends StatefulWidget {
@@ -29,77 +30,83 @@ class _WAListBoxState extends State<WAListBox> {
   @override
   Widget build(BuildContext context) {
     final bool live = widget.enabled;
-    return Focus(
-      canRequestFocus: live,
-      onKeyEvent: (node, event) {
-        if (!live || event is! KeyDownEvent) return KeyEventResult.ignored;
-        if (event.logicalKey == LogicalKeyboardKey.arrowDown) {
-          final int next =
-              (widget.selectedIndex + 1).clamp(0, widget.items.length - 1);
-          if (next != widget.selectedIndex) widget.onSelected(next);
-          return KeyEventResult.handled;
-        }
-        if (event.logicalKey == LogicalKeyboardKey.arrowUp) {
-          final int next =
-              (widget.selectedIndex - 1).clamp(0, widget.items.length - 1);
-          if (next != widget.selectedIndex) widget.onSelected(next);
-          return KeyEventResult.handled;
-        }
-        return KeyEventResult.ignored;
-      },
-      child: Builder(builder: (context) {
-        final bool hasFocus = Focus.of(context).hasFocus;
-        // Outer border is always grey in WA, regardless of focus or hover.
-        // Per-row keyboard focus is shown by a dotted grey rect (see below).
-        final Color border = live ? WAColors.grey : WAColors.disabled;
-        return Container(
-          width: widget.width,
-          height: widget.height,
-          decoration: BoxDecoration(
-            color: WAColors.darkBlue,
-            border: Border.all(color: border, width: WAMetrics.borderWidth),
-          ),
-          child: ListView.builder(
-            itemCount: widget.items.length,
-            itemExtent: WAFonts.rowHeight,
-            padding: EdgeInsets.zero,
-            itemBuilder: (context, i) {
-              final bool selected = i == widget.selectedIndex;
-              final Color bg = selected
-                  ? (live ? WAColors.selectionRed : WAColors.disabled)
-                  : WAColors.darkBlue;
-              final Color fg = !live ? WAColors.disabled : WAColors.white;
-              return MouseRegion(
-                cursor: live
-                    ? SystemMouseCursors.click
-                    : SystemMouseCursors.basic,
-                child: GestureDetector(
-                  behavior: HitTestBehavior.opaque,
-                  onTapDown: live
-                      ? (_) {
-                          Focus.of(context).requestFocus();
-                          widget.onSelected(i);
-                        }
-                      : null,
-                  child: CustomPaint(
-                    foregroundPainter: (selected && hasFocus && live)
-                        ? _DottedRectPainter(WAColors.grey)
+    return WADisable(
+      disabled: !live,
+      child: Focus(
+        canRequestFocus: live,
+        onKeyEvent: (node, event) {
+          if (!live || event is! KeyDownEvent) return KeyEventResult.ignored;
+          if (event.logicalKey == LogicalKeyboardKey.arrowDown) {
+            final int next =
+                (widget.selectedIndex + 1).clamp(0, widget.items.length - 1);
+            if (next != widget.selectedIndex) widget.onSelected(next);
+            return KeyEventResult.handled;
+          }
+          if (event.logicalKey == LogicalKeyboardKey.arrowUp) {
+            final int next =
+                (widget.selectedIndex - 1).clamp(0, widget.items.length - 1);
+            if (next != widget.selectedIndex) widget.onSelected(next);
+            return KeyEventResult.handled;
+          }
+          return KeyEventResult.ignored;
+        },
+        child: Builder(builder: (context) {
+          final bool hasFocus = Focus.of(context).hasFocus;
+          // Outer border is always grey in WA, regardless of focus or hover.
+          // Per-row keyboard focus is shown by a dotted grey rect (see below).
+          return Container(
+            width: widget.width,
+            height: widget.height,
+            decoration: BoxDecoration(
+              color: WAColors.darkBlue,
+              border: Border.all(
+                color: WAColors.grey,
+                width: WAMetrics.borderWidth,
+              ),
+            ),
+            child: ListView.builder(
+              itemCount: widget.items.length,
+              itemExtent: WAFonts.rowHeight,
+              padding: EdgeInsets.zero,
+              itemBuilder: (context, i) {
+                final bool selected = i == widget.selectedIndex;
+                final Color bg =
+                    selected ? WAColors.selectionRed : WAColors.darkBlue;
+                return MouseRegion(
+                  cursor: live
+                      ? SystemMouseCursors.click
+                      : SystemMouseCursors.basic,
+                  child: GestureDetector(
+                    behavior: HitTestBehavior.opaque,
+                    onTapDown: live
+                        ? (_) {
+                            Focus.of(context).requestFocus();
+                            widget.onSelected(i);
+                          }
                         : null,
-                    child: Container(
-                      color: bg,
-                      padding: EdgeInsets.symmetric(
-                        horizontal: WAMetrics.controlPadH,
+                    child: CustomPaint(
+                      foregroundPainter: (selected && hasFocus && live)
+                          ? _DottedRectPainter(WAColors.grey)
+                          : null,
+                      child: Container(
+                        color: bg,
+                        padding: EdgeInsets.symmetric(
+                          horizontal: WAMetrics.controlPadH,
+                        ),
+                        alignment: Alignment.centerLeft,
+                        child: Text(
+                          widget.items[i],
+                          style: WAFonts.bodyOn(WAColors.white),
+                        ),
                       ),
-                      alignment: Alignment.centerLeft,
-                      child: Text(widget.items[i], style: WAFonts.bodyOn(fg)),
                     ),
                   ),
-                ),
-              );
-            },
-          ),
-        );
-      }),
+                );
+              },
+            ),
+          );
+        }),
+      ),
     );
   }
 }

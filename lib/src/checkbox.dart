@@ -1,5 +1,6 @@
 import 'package:flutter/widgets.dart';
 
+import 'disable.dart';
 import 'pressable.dart';
 import 'theme.dart';
 
@@ -23,37 +24,35 @@ class WACheckbox extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    return WAPressable(
-      enabled: enabled,
-      onActivate: _toggle,
-      // Keyboard focus draws no visible change; hover (Highlighted) and press
-      // (Pressed) each have distinct faces and both render the caption white.
-      builder: (context, hover, pressed, focused) {
-        final bool emphasis = enabled && (hover || pressed);
-        final Color textColor = !enabled
-            ? WAColors.disabled
-            : emphasis
-                ? WAColors.white
-                : WAColors.grey;
-        return Row(
-          mainAxisSize: MainAxisSize.min,
-          children: [
-            CustomPaint(
-              size: Size.square(waPx(10)),
-              painter: _CheckboxPainter(
-                value: value,
-                enabled: enabled,
-                hover: hover,
-                pressed: pressed,
+    return WADisable(
+      disabled: !enabled,
+      child: WAPressable(
+        enabled: enabled,
+        onActivate: _toggle,
+        // Keyboard focus draws no visible change; hover (Highlighted) and press
+        // (Pressed) each have distinct faces and both render the caption white.
+        builder: (context, hover, pressed, focused) {
+          final Color textColor =
+              (hover || pressed) ? WAColors.white : WAColors.grey;
+          return Row(
+            mainAxisSize: MainAxisSize.min,
+            children: [
+              CustomPaint(
+                size: Size.square(waPx(10)),
+                painter: _CheckboxPainter(
+                  value: value,
+                  hover: hover,
+                  pressed: pressed,
+                ),
               ),
-            ),
-            if (label != null) ...[
-              SizedBox(width: WAMetrics.gap),
-              Text(label!, style: WAFonts.bodyOn(textColor)),
+              if (label != null) ...[
+                SizedBox(width: WAMetrics.gap),
+                Text(label!, style: WAFonts.bodyOn(textColor)),
+              ],
             ],
-          ],
-        );
-      },
+          );
+        },
+      ),
     );
   }
 }
@@ -61,27 +60,20 @@ class WACheckbox extends StatelessWidget {
 class _CheckboxPainter extends CustomPainter {
   _CheckboxPainter({
     required this.value,
-    required this.enabled,
     required this.hover,
     required this.pressed,
   });
 
   final bool? value;
-  final bool enabled;
   final bool hover;
   final bool pressed;
 
   @override
   void paint(Canvas canvas, Size size) {
     final double bw = waPx(1);
-    final Color border = !enabled
-        ? WAColors.disabled
-        : (hover || pressed)
-            ? WAColors.white
-            : WAColors.grey;
-    final Color tickColor = !enabled
-        ? WAColors.disabled
-        : (hover ? WAColors.white : WAColors.grey);
+    final Color border =
+        (hover || pressed) ? WAColors.white : WAColors.grey;
+    final Color tickColor = hover ? WAColors.white : WAColors.grey;
 
     final Rect outer = Rect.fromLTWH(
       bw / 2,
@@ -90,7 +82,7 @@ class _CheckboxPainter extends CustomPainter {
       size.height - bw,
     );
 
-    if (pressed && enabled) {
+    if (pressed) {
       // Pressed face: outer rect filled with border color (grey), outline
       // white, tick hidden.
       canvas.drawRect(outer, Paint()..color = WAColors.grey);
@@ -152,8 +144,5 @@ class _CheckboxPainter extends CustomPainter {
 
   @override
   bool shouldRepaint(_CheckboxPainter old) =>
-      old.value != value ||
-      old.enabled != enabled ||
-      old.hover != hover ||
-      old.pressed != pressed;
+      old.value != value || old.hover != hover || old.pressed != pressed;
 }

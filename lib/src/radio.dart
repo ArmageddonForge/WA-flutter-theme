@@ -1,5 +1,6 @@
 import 'package:flutter/widgets.dart';
 
+import 'disable.dart';
 import 'pressable.dart';
 import 'theme.dart';
 
@@ -27,39 +28,38 @@ class WARadio<T> extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    return WAPressable(
-      enabled: enabled,
-      onActivate: _select,
-      // WA doesn't actually paint radio circles — only the caption is drawn.
-      // We keep the circle for usability and mirror the checkbox's per-state
-      // visual: hover paints white border + white dot, press fills the
-      // circle grey with white outline and hides the dot, focus alone draws
-      // no visible change.
-      builder: (context, hover, pressed, focused) {
-        final Color textColor = !enabled
-            ? WAColors.disabled
-            : (hover || pressed)
-                ? WAColors.white
-                : WAColors.grey;
-        return Row(
-          mainAxisSize: MainAxisSize.min,
-          children: [
-            CustomPaint(
-              size: Size.square(waPx(11)),
-              painter: _RadioPainter(
-                selected: _selected,
-                enabled: enabled,
-                hover: hover,
-                pressed: pressed,
+    return WADisable(
+      disabled: !enabled,
+      child: WAPressable(
+        enabled: enabled,
+        onActivate: _select,
+        // WA doesn't actually paint radio circles — only the caption is drawn.
+        // We keep the circle for usability and mirror the checkbox's per-state
+        // visual: hover paints white border + white dot, press fills the
+        // circle grey with white outline and hides the dot, focus alone draws
+        // no visible change.
+        builder: (context, hover, pressed, focused) {
+          final Color textColor =
+              (hover || pressed) ? WAColors.white : WAColors.grey;
+          return Row(
+            mainAxisSize: MainAxisSize.min,
+            children: [
+              CustomPaint(
+                size: Size.square(waPx(11)),
+                painter: _RadioPainter(
+                  selected: _selected,
+                  hover: hover,
+                  pressed: pressed,
+                ),
               ),
-            ),
-            if (label != null) ...[
-              SizedBox(width: WAMetrics.gap),
-              Text(label!, style: WAFonts.bodyOn(textColor)),
+              if (label != null) ...[
+                SizedBox(width: WAMetrics.gap),
+                Text(label!, style: WAFonts.bodyOn(textColor)),
+              ],
             ],
-          ],
-        );
-      },
+          );
+        },
+      ),
     );
   }
 }
@@ -67,13 +67,11 @@ class WARadio<T> extends StatelessWidget {
 class _RadioPainter extends CustomPainter {
   _RadioPainter({
     required this.selected,
-    required this.enabled,
     required this.hover,
     required this.pressed,
   });
 
   final bool selected;
-  final bool enabled;
   final bool hover;
   final bool pressed;
 
@@ -83,7 +81,7 @@ class _RadioPainter extends CustomPainter {
     final double r = (size.shortestSide - waPx(1)) / 2;
     final double bw = waPx(1);
 
-    if (pressed && enabled) {
+    if (pressed) {
       // Pressed face mirrors the checkbox: circle filled with the border
       // colour (grey), outlined white, dot hidden.
       canvas.drawCircle(center, r, Paint()..color = WAColors.grey);
@@ -98,16 +96,8 @@ class _RadioPainter extends CustomPainter {
       return;
     }
 
-    final Color border = !enabled
-        ? WAColors.disabled
-        : hover
-            ? WAColors.white
-            : WAColors.grey;
-    final Color dot = !enabled
-        ? WAColors.disabled
-        : hover
-            ? WAColors.white
-            : WAColors.grey;
+    final Color border = hover ? WAColors.white : WAColors.grey;
+    final Color dot = hover ? WAColors.white : WAColors.grey;
 
     canvas.drawCircle(center, r, Paint()..color = WAColors.black);
     canvas.drawCircle(
@@ -126,7 +116,6 @@ class _RadioPainter extends CustomPainter {
   @override
   bool shouldRepaint(_RadioPainter old) =>
       old.selected != selected ||
-      old.enabled != enabled ||
       old.hover != hover ||
       old.pressed != pressed;
 }

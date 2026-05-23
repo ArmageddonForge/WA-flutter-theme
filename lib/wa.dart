@@ -4,6 +4,7 @@ library;
 
 export 'src/button.dart';
 export 'src/checkbox.dart';
+export 'src/disable.dart';
 export 'src/dropdown.dart';
 export 'src/group_box.dart';
 export 'src/label.dart';

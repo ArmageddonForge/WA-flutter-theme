@@ -1,5 +1,6 @@
 import 'package:flutter/widgets.dart';
 
+import 'disable.dart';
 import 'pressable.dart';
 import 'theme.dart';
 
@@ -101,89 +102,84 @@ class _WADropdownState extends State<WADropdown> {
 
   @override
   Widget build(BuildContext context) {
-    return WAPressable(
-      enabled: widget.enabled,
-      onActivate: _toggle,
-      focusNode: _focusNode,
-      // Dropdown anchor opens on mouse-down (selection-style, like text edit
-      // focus), not on the mouse-up + drag-away-to-cancel that buttons use.
-      activateOnDown: true,
-      builder: (context, hover, pressed, focused) {
-        // Opening the dropdown drops the anchor back to Normal; Active is
-        // "keyboard focus with list closed".
-        final bool active = focused && !_open;
-        final bool live = widget.enabled;
-        final Color border = !live
-            ? WAColors.disabled
-            : active
-                ? WAColors.yellow
-                : hover
-                    ? WAColors.white
-                    : WAColors.grey;
-        // Caption is grey at rest, white only when focused (Active). Hover
-        // does not promote the caption.
-        final Color textColor = !live
-            ? WAColors.disabled
-            : active
-                ? WAColors.white
-                : WAColors.grey;
-        // Drop-button arrow is independent of caption: grey at rest, white
-        // on hover or press; cell stays opaque black even when the anchor
-        // face is dark blue.
-        final Color chevronColor = !live
-            ? WAColors.disabled
-            : (hover || pressed)
-                ? WAColors.white
-                : WAColors.grey;
-        final Color interior =
-            live && active ? WAColors.darkBlue : WAColors.black;
-        return CompositedTransformTarget(
-          link: _link,
-          child: Container(
-            key: _anchorKey,
-            width: widget.width,
-            decoration: BoxDecoration(
-              color: interior,
-              border: Border.all(color: border, width: WAMetrics.borderWidth),
-            ),
-            child: IntrinsicHeight(
-              child: Row(
-                children: [
-                  Expanded(
-                    child: Padding(
-                      padding: EdgeInsets.symmetric(
-                        horizontal: WAMetrics.controlPadH,
-                        vertical: WAMetrics.controlPadV,
-                      ),
-                      child: Text(
-                        widget.items[widget.selectedIndex],
-                        style: WAFonts.bodyOn(textColor),
-                        overflow: TextOverflow.ellipsis,
-                      ),
-                    ),
-                  ),
-                  Container(width: WAMetrics.borderWidth, color: border),
-                  Container(
-                    color: WAColors.black,
-                    padding: EdgeInsets.symmetric(
-                      horizontal: WAMetrics.controlPadH,
-                    ),
-                    child: Center(
-                      child: Transform.translate(
-                        offset: Offset(0, pressed ? waPx(1) : 0),
-                        child: CustomPaint(
-                          size: Size(waPx(7), waPx(4)),
-                          painter: _ChevronPainter(chevronColor),
+    return WADisable(
+      disabled: !widget.enabled,
+      child: WAPressable(
+        enabled: widget.enabled,
+        onActivate: _toggle,
+        focusNode: _focusNode,
+        // Dropdown anchor opens on mouse-down (selection-style, like text edit
+        // focus), not on the mouse-up + drag-away-to-cancel that buttons use.
+        activateOnDown: true,
+        builder: (context, hover, pressed, focused) {
+          // Opening the dropdown drops the anchor back to Normal; Active is
+          // "keyboard focus with list closed".
+          final bool active = focused && !_open;
+          final Color border = active
+              ? WAColors.yellow
+              : hover
+                  ? WAColors.white
+                  : WAColors.grey;
+          // Caption is grey at rest, white only when focused (Active). Hover
+          // does not promote the caption.
+          final Color textColor =
+              active ? WAColors.white : WAColors.grey;
+          // Drop-button arrow is independent of caption: grey at rest, white
+          // on hover or press; cell stays opaque black even when the anchor
+          // face is dark blue.
+          final Color chevronColor =
+              (hover || pressed) ? WAColors.white : WAColors.grey;
+          final Color interior =
+              active ? WAColors.darkBlue : WAColors.black;
+          return CompositedTransformTarget(
+            link: _link,
+            child: Container(
+              key: _anchorKey,
+              width: widget.width,
+              decoration: BoxDecoration(
+                color: interior,
+                border:
+                    Border.all(color: border, width: WAMetrics.borderWidth),
+              ),
+              child: IntrinsicHeight(
+                child: Row(
+                  children: [
+                    Expanded(
+                      child: Padding(
+                        padding: EdgeInsets.symmetric(
+                          horizontal: WAMetrics.controlPadH,
+                          vertical: WAMetrics.controlPadV,
+                        ),
+                        child: Text(
+                          widget.items[widget.selectedIndex],
+                          style: WAFonts.bodyOn(textColor),
+                          overflow: TextOverflow.ellipsis,
                         ),
                       ),
                     ),
-                  ),
-                ],
+                    Container(width: WAMetrics.borderWidth, color: border),
+                    Container(
+                      color: WAColors.black,
+                      padding: EdgeInsets.symmetric(
+                        horizontal: WAMetrics.controlPadH,
+                      ),
+                      child: Center(
+                        child: Transform.translate(
+                          offset: Offset(0, pressed ? waPx(1) : 0),
+                          child: CustomPaint(
+                            size: Size(waPx(7), waPx(4)),
+                            painter: _ChevronPainter(chevronColor),
+                          ),
+                        ),
+                      ),
+                    ),
+                  ],
+                ),
               ),
             ),
-          ),
-        );
-      },
+          );
+        },
+      ),
     );
   }
 }

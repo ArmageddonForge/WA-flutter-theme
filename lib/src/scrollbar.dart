@@ -2,6 +2,7 @@ import 'package:flutter/gestures.dart';
 import 'package:flutter/services.dart';
 import 'package:flutter/widgets.dart';
 
+import 'disable.dart';
 import 'theme.dart';
 
 /// Horizontal scrollbar-style value control. WA uses this widget shape for
@@ -62,75 +63,73 @@ class _WAScrollbarState extends State<WAScrollbar> {
   @override
   Widget build(BuildContext context) {
     final bool live = widget.enabled;
-    return MouseRegion(
-      cursor: live ? SystemMouseCursors.click : SystemMouseCursors.basic,
-      onEnter: (_) => setState(() => _hover = true),
-      onExit: (_) => setState(() => _hover = false),
-      child: Focus(
-        canRequestFocus: live,
-        onKeyEvent: (node, event) {
-          if (!live || event is! KeyDownEvent) return KeyEventResult.ignored;
-          if (event.logicalKey == LogicalKeyboardKey.arrowLeft) {
-            _stepBy(-_step);
-            return KeyEventResult.handled;
-          }
-          if (event.logicalKey == LogicalKeyboardKey.arrowRight) {
-            _stepBy(_step);
-            return KeyEventResult.handled;
-          }
-          return KeyEventResult.ignored;
-        },
-        child: Builder(builder: (context) {
-          final bool hasFocus = Focus.of(context).hasFocus;
-          final Color border = !live
-              ? WAColors.disabled
-              : hasFocus
-                  ? WAColors.yellow
-                  : (_hover || _dragging)
-                      ? WAColors.white
-                      : WAColors.grey;
-          return SizedBox(
-            width: widget.width,
-            height: waPx(18),
-            child: Row(
-              children: [
-                _ScrollbarButton(
-                  dir: _ArrowDir.left,
-                  border: border,
-                  enabled: live,
-                  onTap: () {
-                    Focus.of(context).requestFocus();
-                    _stepBy(-_step);
-                  },
-                ),
-                Expanded(
-                  child: _ScrollbarTrack(
-                    t: _t,
+    return WADisable(
+      disabled: !live,
+      child: MouseRegion(
+        cursor: live ? SystemMouseCursors.click : SystemMouseCursors.basic,
+        onEnter: (_) => setState(() => _hover = true),
+        onExit: (_) => setState(() => _hover = false),
+        child: Focus(
+          canRequestFocus: live,
+          onKeyEvent: (node, event) {
+            if (!live || event is! KeyDownEvent) return KeyEventResult.ignored;
+            if (event.logicalKey == LogicalKeyboardKey.arrowLeft) {
+              _stepBy(-_step);
+              return KeyEventResult.handled;
+            }
+            if (event.logicalKey == LogicalKeyboardKey.arrowRight) {
+              _stepBy(_step);
+              return KeyEventResult.handled;
+            }
+            return KeyEventResult.ignored;
+          },
+          child: Builder(builder: (context) {
+            final bool hasFocus = Focus.of(context).hasFocus;
+            final Color border = hasFocus
+                ? WAColors.yellow
+                : (_hover || _dragging)
+                    ? WAColors.white
+                    : WAColors.grey;
+            return SizedBox(
+              width: widget.width,
+              height: waPx(18),
+              child: Row(
+                children: [
+                  _ScrollbarButton(
+                    dir: _ArrowDir.left,
                     border: border,
-                    enabled: live,
-                    dragging: _dragging,
-                    onTapDown: (t) {
+                    onTap: () {
                       Focus.of(context).requestFocus();
-                      _setFromT(t);
+                      _stepBy(-_step);
                     },
-                    onDragStart: () => setState(() => _dragging = true),
-                    onDragUpdate: _setFromT,
-                    onDragEnd: () => setState(() => _dragging = false),
                   ),
-                ),
-                _ScrollbarButton(
-                  dir: _ArrowDir.right,
-                  border: border,
-                  enabled: live,
-                  onTap: () {
-                    Focus.of(context).requestFocus();
-                    _stepBy(_step);
-                  },
-                ),
-              ],
-            ),
-          );
-        }),
+                  Expanded(
+                    child: _ScrollbarTrack(
+                      t: _t,
+                      border: border,
+                      dragging: _dragging,
+                      onTapDown: (t) {
+                        Focus.of(context).requestFocus();
+                        _setFromT(t);
+                      },
+                      onDragStart: () => setState(() => _dragging = true),
+                      onDragUpdate: _setFromT,
+                      onDragEnd: () => setState(() => _dragging = false),
+                    ),
+                  ),
+                  _ScrollbarButton(
+                    dir: _ArrowDir.right,
+                    border: border,
+                    onTap: () {
+                      Focus.of(context).requestFocus();
+                      _stepBy(_step);
+                    },
+                  ),
+                ],
+              ),
+            );
+          }),
+        ),
       ),
     );
   }
@@ -142,13 +141,11 @@ class _ScrollbarButton extends StatefulWidget {
   const _ScrollbarButton({
     required this.dir,
     required this.border,
-    required this.enabled,
     required this.onTap,
   });
 
   final _ArrowDir dir;
   final Color border;
-  final bool enabled;
   final VoidCallback onTap;
 
   @override
@@ -168,18 +165,13 @@ class _ScrollbarButtonState extends State<_ScrollbarButton> {
       left: widget.dir == _ArrowDir.left ? side : BorderSide.none,
       right: widget.dir == _ArrowDir.right ? side : BorderSide.none,
     );
-    final Color glyph =
-        widget.enabled ? WAColors.grey : WAColors.disabled;
     return GestureDetector(
-      onTapDown: widget.enabled
-          ? (_) {
-              setState(() => _pressed = true);
-              widget.onTap();
-            }
-          : null,
-      onTapUp: widget.enabled ? (_) => setState(() => _pressed = false) : null,
-      onTapCancel:
-          widget.enabled ? () => setState(() => _pressed = false) : null,
+      onTapDown: (_) {
+        setState(() => _pressed = true);
+        widget.onTap();
+      },
+      onTapUp: (_) => setState(() => _pressed = false),
+      onTapCancel: () => setState(() => _pressed = false),
       child: Container(
         width: waPx(13),
         height: waPx(18),
@@ -189,7 +181,7 @@ class _ScrollbarButtonState extends State<_ScrollbarButton> {
             offset: Offset(0, _pressed ? waPx(1) : 0),
             child: CustomPaint(
               size: Size(waPx(4), waPx(8)),
-              painter: _ArrowPainter(dir: widget.dir, color: glyph),
+              painter: _ArrowPainter(dir: widget.dir, color: WAColors.grey),
             ),
           ),
         ),
@@ -228,7 +220,6 @@ class _ScrollbarTrack extends StatelessWidget {
   const _ScrollbarTrack({
     required this.t,
     required this.border,
-    required this.enabled,
     required this.dragging,
     required this.onTapDown,
     required this.onDragStart,
@@ -238,7 +229,6 @@ class _ScrollbarTrack extends StatelessWidget {
 
   final double t;
   final Color border;
-  final bool enabled;
   final bool dragging;
   final ValueChanged<double> onTapDown;
   final VoidCallback onDragStart;
@@ -252,24 +242,18 @@ class _ScrollbarTrack extends StatelessWidget {
       return GestureDetector(
         behavior: HitTestBehavior.opaque,
         dragStartBehavior: DragStartBehavior.down,
-        onTapDown: enabled
-            ? (d) => onTapDown((d.localPosition.dx / w).clamp(0.0, 1.0))
-            : null,
-        onHorizontalDragStart: enabled
-            ? (d) {
-                onDragStart();
-                onDragUpdate((d.localPosition.dx / w).clamp(0.0, 1.0));
-              }
-            : null,
-        onHorizontalDragUpdate: enabled
-            ? (d) => onDragUpdate((d.localPosition.dx / w).clamp(0.0, 1.0))
-            : null,
-        onHorizontalDragEnd: enabled ? (_) => onDragEnd() : null,
+        onTapDown: (d) => onTapDown((d.localPosition.dx / w).clamp(0.0, 1.0)),
+        onHorizontalDragStart: (d) {
+          onDragStart();
+          onDragUpdate((d.localPosition.dx / w).clamp(0.0, 1.0));
+        },
+        onHorizontalDragUpdate: (d) =>
+            onDragUpdate((d.localPosition.dx / w).clamp(0.0, 1.0)),
+        onHorizontalDragEnd: (_) => onDragEnd(),
         child: CustomPaint(
           painter: _TrackPainter(
             t: t,
             border: border,
-            interior: enabled ? WAColors.grey : WAColors.disabled,
             thumb: dragging ? WAColors.white : WAColors.pink,
           ),
           size: Size(w, waPx(18)),
@@ -283,13 +267,11 @@ class _TrackPainter extends CustomPainter {
   _TrackPainter({
     required this.t,
     required this.border,
-    required this.interior,
     required this.thumb,
   });
 
   final double t;
   final Color border;
-  final Color interior;
   final Color thumb;
 
   static const double _thumb1x = 11.0;
@@ -319,7 +301,7 @@ class _TrackPainter extends CustomPainter {
       canvas,
       Rect.fromLTWH(ix, iy, iw, ih),
       cell: waPx(1),
-      fill: interior,
+      fill: WAColors.grey,
     );
 
     // Thumb: 1px black border + pink interior.
@@ -365,8 +347,5 @@ class _TrackPainter extends CustomPainter {
 
   @override
   bool shouldRepaint(_TrackPainter old) =>
-      old.t != t ||
-      old.border != border ||
-      old.interior != interior ||
-      old.thumb != thumb;
+      old.t != t || old.border != border || old.thumb != thumb;
 }

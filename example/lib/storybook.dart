@@ -136,8 +136,16 @@ class _TextEditStory extends StatelessWidget {
   Widget build(BuildContext context) {
     return _Variants([
       ('default', SizedBox(width: waPx(120), child: const WATextEdit())),
-      ('disabled',
-          SizedBox(width: waPx(120), child: const WATextEdit(enabled: false))),
+      (
+        'disabled',
+        SizedBox(
+          width: waPx(120),
+          child: const WATextEdit(
+            enabled: false,
+            initialText: 'Boggy B',
+          ),
+        ),
+      ),
     ]);
   }
 }
@@ -362,6 +370,18 @@ class _DropdownStoryState extends State<_DropdownStory> {
             ],
             selectedIndex: _scheme,
             onSelected: (i) => setState(() => _scheme = i),
+          ),
+        ),
+        SizedBox(height: waPx(10)),
+        const WALabel('Disabled', tone: WALabelTone.muted),
+        SizedBox(height: waPx(2)),
+        SizedBox(
+          width: waPx(140),
+          child: WADropdown(
+            items: const ['Artillery'],
+            selectedIndex: 0,
+            onSelected: (_) {},
+            enabled: false,
           ),
         ),
       ],
