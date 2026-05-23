@@ -32,9 +32,13 @@ class WAFonts {
   static const String family = 'DejaVuSansCondensed';
   static const List<String> fallback = ['Tahoma', 'Verdana', 'Droid Sans'];
 
+  // `package: 'wa'` is required because the asset is declared in this
+  // library's pubspec — without it, consumer apps look up the bare family
+  // name and miss the bundled font, falling through to system defaults.
   static const TextStyle body = TextStyle(
     fontFamily: family,
     fontFamilyFallback: fallback,
+    package: 'wa',
     fontWeight: FontWeight.bold,
     fontSize: 9.0 * waScale,
     color: WAColors.grey,
