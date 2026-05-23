@@ -1,0 +1,274 @@
+import 'package:flutter/widgets.dart';
+
+import 'theme.dart';
+
+class WADropdown extends StatefulWidget {
+  const WADropdown({
+    super.key,
+    required this.items,
+    required this.selectedIndex,
+    required this.onSelected,
+    this.width,
+    this.enabled = true,
+  });
+
+  final List<String> items;
+  final int selectedIndex;
+  final ValueChanged<int> onSelected;
+  final double? width;
+  final bool enabled;
+
+  @override
+  State<WADropdown> createState() => _WADropdownState();
+}
+
+class _WADropdownState extends State<WADropdown> {
+  bool _hover = false;
+  bool _open = false;
+  bool _pressed = false;
+  OverlayEntry? _overlay;
+  final LayerLink _link = LayerLink();
+  final GlobalKey _anchorKey = GlobalKey();
+  final FocusNode _focusNode = FocusNode();
+
+  void _toggle() {
+    // WA leaves the anchor focused (Active) after the list closes; clicking
+    // should not unfocus it.
+    _focusNode.requestFocus();
+    if (_open) {
+      _close();
+    } else {
+      _openOverlay();
+    }
+  }
+
+  void _openOverlay() {
+    final RenderBox box =
+        _anchorKey.currentContext!.findRenderObject() as RenderBox;
+    final Size anchorSize = box.size;
+    _overlay = OverlayEntry(
+      builder: (context) => Stack(
+        children: [
+          Positioned.fill(
+            child: GestureDetector(
+              behavior: HitTestBehavior.opaque,
+              onTap: _close,
+            ),
+          ),
+          CompositedTransformFollower(
+            link: _link,
+            showWhenUnlinked: false,
+            offset: Offset(0, anchorSize.height - WAMetrics.borderWidth),
+            child: _DropdownMenu(
+              items: widget.items,
+              selectedIndex: widget.selectedIndex,
+              width: anchorSize.width,
+              onPick: (i) {
+                widget.onSelected(i);
+                _close();
+              },
+            ),
+          ),
+        ],
+      ),
+    );
+    Overlay.of(context).insert(_overlay!);
+    setState(() => _open = true);
+  }
+
+  void _close() {
+    _overlay?.remove();
+    _overlay = null;
+    if (mounted) setState(() => _open = false);
+  }
+
+  @override
+  void dispose() {
+    _overlay?.remove();
+    _focusNode.dispose();
+    super.dispose();
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    final bool live = widget.enabled;
+    return MouseRegion(
+      cursor: live ? SystemMouseCursors.click : SystemMouseCursors.basic,
+      onEnter: (_) => setState(() => _hover = true),
+      onExit: (_) => setState(() => _hover = false),
+      child: GestureDetector(
+        onTapDown: live ? (_) => setState(() => _pressed = true) : null,
+        onTapUp: live ? (_) => setState(() => _pressed = false) : null,
+        onTapCancel: live ? () => setState(() => _pressed = false) : null,
+        onTap: live ? _toggle : null,
+        child: Focus(
+          focusNode: _focusNode,
+          canRequestFocus: live,
+          child: Builder(builder: (context) {
+            final bool hasFocus = Focus.of(context).hasFocus;
+            // Opening the dropdown drops the anchor back to Normal; Active
+            // is "keyboard focus with list closed".
+            final bool active = hasFocus && !_open;
+            final Color border = !live
+                ? WAColors.disabledBorder
+                : active
+                    ? WAColors.yellow
+                    : _hover
+                        ? WAColors.white
+                        : WAColors.grey;
+            // Caption is grey at rest, white only when focused (Active).
+            // Hover does not promote the caption.
+            final Color textColor = !live
+                ? WAColors.disabledFg
+                : active
+                    ? WAColors.white
+                    : WAColors.grey;
+            // Drop-button arrow is independent of caption: grey at rest,
+            // white on hover or press; cell stays opaque black even when the
+            // anchor face is dark blue.
+            final Color chevronColor = !live
+                ? WAColors.disabledFg
+                : (_hover || _pressed)
+                    ? WAColors.white
+                    : WAColors.grey;
+            final Color interior =
+                live && active ? WAColors.darkBlue : WAColors.black;
+            return CompositedTransformTarget(
+              link: _link,
+              child: Container(
+                key: _anchorKey,
+                width: widget.width,
+                decoration: BoxDecoration(
+                  color: interior,
+                  border: Border.all(
+                    color: border,
+                    width: WAMetrics.borderWidth,
+                  ),
+                ),
+                child: IntrinsicHeight(
+                  child: Row(
+                    children: [
+                      Expanded(
+                        child: Padding(
+                          padding: EdgeInsets.symmetric(
+                            horizontal: WAMetrics.controlPadH,
+                            vertical: WAMetrics.controlPadV,
+                          ),
+                          child: Text(
+                            widget.items[widget.selectedIndex],
+                            style: WAFonts.bodyOn(textColor),
+                            overflow: TextOverflow.ellipsis,
+                          ),
+                        ),
+                      ),
+                      Container(
+                        width: WAMetrics.borderWidth,
+                        color: border,
+                      ),
+                      Container(
+                        color: WAColors.black,
+                        padding: EdgeInsets.symmetric(
+                          horizontal: WAMetrics.controlPadH,
+                        ),
+                        child: Center(
+                          child: Transform.translate(
+                            offset: Offset(0, _pressed ? waPx(1) : 0),
+                            child: CustomPaint(
+                              size: Size(waPx(7), waPx(4)),
+                              painter: _ChevronPainter(chevronColor),
+                            ),
+                          ),
+                        ),
+                      ),
+                    ],
+                  ),
+                ),
+              ),
+            );
+          }),
+        ),
+      ),
+    );
+  }
+}
+
+class _DropdownMenu extends StatefulWidget {
+  const _DropdownMenu({
+    required this.items,
+    required this.selectedIndex,
+    required this.width,
+    required this.onPick,
+  });
+
+  final List<String> items;
+  final int selectedIndex;
+  final double width;
+  final ValueChanged<int> onPick;
+
+  @override
+  State<_DropdownMenu> createState() => _DropdownMenuState();
+}
+
+class _DropdownMenuState extends State<_DropdownMenu> {
+  int? _hoverIndex;
+
+  @override
+  Widget build(BuildContext context) {
+    final double rowHeight = WAFonts.body.fontSize! * WAFonts.body.height!;
+    return Container(
+      width: widget.width,
+      decoration: BoxDecoration(
+        color: WAColors.darkBlue,
+        // Open menu's outer border is grey, same as a regular list box.
+        border: Border.all(color: WAColors.grey, width: WAMetrics.borderWidth),
+      ),
+      child: Column(
+        mainAxisSize: MainAxisSize.min,
+        children: List.generate(widget.items.length, (i) {
+          final bool selected = i == widget.selectedIndex;
+          final bool hovered = i == _hoverIndex;
+          final Color bg =
+              hovered || selected ? WAColors.selectionRed : WAColors.darkBlue;
+          return MouseRegion(
+            cursor: SystemMouseCursors.click,
+            onEnter: (_) => setState(() => _hoverIndex = i),
+            onExit: (_) => setState(() {
+              if (_hoverIndex == i) _hoverIndex = null;
+            }),
+            child: GestureDetector(
+              behavior: HitTestBehavior.opaque,
+              onTap: () => widget.onPick(i),
+              child: Container(
+                height: rowHeight,
+                color: bg,
+                padding: EdgeInsets.symmetric(
+                  horizontal: WAMetrics.controlPadH,
+                ),
+                alignment: Alignment.centerLeft,
+                child: Text(widget.items[i], style: WAFonts.bodyOn(WAColors.white)),
+              ),
+            ),
+          );
+        }),
+      ),
+    );
+  }
+}
+
+class _ChevronPainter extends CustomPainter {
+  _ChevronPainter(this.color);
+  final Color color;
+
+  @override
+  void paint(Canvas canvas, Size size) {
+    final Path p = Path()
+      ..moveTo(0, 0)
+      ..lineTo(size.width, 0)
+      ..lineTo(size.width / 2, size.height)
+      ..close();
+    canvas.drawPath(p, Paint()..color = color);
+  }
+
+  @override
+  bool shouldRepaint(_ChevronPainter old) => old.color != color;
+}
