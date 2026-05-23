@@ -1,6 +1,5 @@
 import 'package:flutter/widgets.dart';
-
-import 'wa/widgets.dart';
+import 'package:wa/wa.dart';
 
 class WAStorybook extends StatefulWidget {
   const WAStorybook({super.key});
@@ -26,22 +25,19 @@ class _WAStorybookState extends State<WAStorybook> {
 
   @override
   Widget build(BuildContext context) {
-    return Container(
-      decoration: const BoxDecoration(gradient: WAColors.backgroundGradient),
-      child: Padding(
-        padding: EdgeInsets.all(waPx(8)),
-        child: Row(
-          crossAxisAlignment: CrossAxisAlignment.stretch,
-          children: [
-            _Sidebar(
-              stories: _stories,
-              selected: _selected,
-              onSelect: (i) => setState(() => _selected = i),
-            ),
-            SizedBox(width: waPx(8)),
-            Expanded(child: _StoryFrame(story: _stories[_selected])),
-          ],
-        ),
+    return Padding(
+      padding: EdgeInsets.all(waPx(8)),
+      child: Row(
+        crossAxisAlignment: CrossAxisAlignment.stretch,
+        children: [
+          _Sidebar(
+            stories: _stories,
+            selected: _selected,
+            onSelect: (i) => setState(() => _selected = i),
+          ),
+          SizedBox(width: waPx(8)),
+          Expanded(child: _StoryFrame(story: _stories[_selected])),
+        ],
       ),
     );
   }

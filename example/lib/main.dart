@@ -1,7 +1,7 @@
 import 'package:flutter/widgets.dart';
+import 'package:wa/wa.dart';
 
 import 'storybook.dart';
-import 'wa/widgets.dart';
 
 void main() => runApp(const WAApp());
 
@@ -14,10 +14,7 @@ class WAApp extends StatelessWidget {
       onGenerateRoute: (settings) => PageRouteBuilder(
         transitionDuration: const Duration(milliseconds: 100),
         reverseTransitionDuration: const Duration(milliseconds: 100),
-        pageBuilder: (_, __, ___) => const DefaultTextStyle(
-          style: WAFonts.body,
-          child: WAStorybook(),
-        ),
+        pageBuilder: (_, __, ___) => const WATheme(child: WAStorybook()),
         transitionsBuilder: (_, animation, second, child) => FadeTransition(
           opacity: animation,
           child: FadeTransition(

@@ -55,6 +55,36 @@ class WASound {
   static void play(String relPath) {}
 }
 
+/// Sets WA defaults (text style, background gradient) for its subtree. Wrap
+/// the screen — or your whole app under `WidgetsApp` — with this so plain
+/// `Text` widgets inherit the WA font and any blank area paints the WA sky.
+class WATheme extends StatelessWidget {
+  const WATheme({
+    super.key,
+    required this.child,
+    this.background = true,
+  });
+
+  final Widget child;
+
+  /// Paint the WA black→dark-blue vertical gradient behind [child]. Disable
+  /// when embedding inside another themed surface that already has a
+  /// background.
+  final bool background;
+
+  @override
+  Widget build(BuildContext context) {
+    Widget content = DefaultTextStyle(style: WAFonts.body, child: child);
+    if (background) {
+      content = DecoratedBox(
+        decoration: const BoxDecoration(gradient: WAColors.backgroundGradient),
+        child: content,
+      );
+    }
+    return content;
+  }
+}
+
 /// Standard border widths and paddings, expressed in WA-scaled pixels.
 class WAMetrics {
   static double get borderWidth => waPx(1);
