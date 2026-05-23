@@ -7,20 +7,49 @@ const double waScale = 2.0;
 /// Snap a logical pixel size to the WA scale grid.
 double waPx(num n) => n * waScale;
 
+/// Named colours sourced from WA's RIFF PAL. Trailing comment is the palette
+/// index, kept so future additions / corrections can be cross-checked against
+/// the engine's palette file.
 class WAColors {
-  static const Color black = Color(0xFF000000);
-  static const Color darkBlue = Color(0xFF000040);
-  static const Color grey = Color(0xFF808080);
-  static const Color white = Color(0xFFFFFFFF);
-  static const Color yellow = Color(0xFFFFFF00);
-  static const Color selectionRed = Color(0xFFFF0000);
-  static const Color pink = Color(0xFFFEB6A8);
+  static const Color darkRed = Color(0xFFBF0000); // 186
+  static const Color green = Color(0xFF00FF00); // 211
+  static const Color brown = Color(0xFFD99A05); // 212
+  static const Color magenta = Color(0xFFFF00FF); // 213
+  static const Color darkBlue = Color(0xFF000040); // 214
+  static const Color selectionRed = Color(0xFFFF0000); // 215
+  static const Color white = Color(0xFFFFFFFF); // 216
+  static const Color grey = Color(0xFF808080); // 217
+  static const Color black = Color(0xFF000000); // 218
+  static const Color yellow = Color(0xFFFFFF00); // 219
+
+  /// Slider thumb, text-edit caret, colour-key sentinel. Distinct from
+  /// [pinkText] and [lightPink], which are font-tag colours used by IRC.
+  static const Color pink = Color(0xFFFEB6A8); // 220
+
+  static const Color lightBlue = Color(0xFFC9E6F8); // 221
+  static const Color blue = Color(0xFF0096D3); // 222
+  static const Color scrollbarBack = Color(0xFF0E0E10); // 234
+
+  /// IRC chat `<font color="Pink">` — distinct from the slider-thumb [pink].
+  static const Color pinkText = Color(0xFFFF7F7F); // 237
+
+  /// IRC chat `<font color="LightPink">`; also used by WormNET game-list
+  /// rows that are open and joinable.
+  static const Color lightPink = Color(0xFFFFBFBF); // 238
+
+  static const Color cyan = Color(0xFF00FFFF); // 247
+  static const Color scrollbarFront = Color(0xFF888888); // 253
 
   /// Vertical gradient used for the background of full-screen menus.
   static const Gradient backgroundGradient = LinearGradient(
     begin: Alignment.topCenter,
     end: Alignment.bottomCenter,
-    colors: [black, darkBlue],
+    stops: [0.0, 0.77, 1.0],
+    colors: [
+      Color(0xFF000008),
+      Color(0xFF00008C),
+      Color(0xFF00008C),
+    ],
   );
 }
 
@@ -37,15 +66,30 @@ class WAFonts {
     fontFamilyFallback: fallback,
     package: 'wa',
     fontWeight: FontWeight.bold,
-    fontSize: 9.0 * waScale,
+    fontSize: 28.4,
     color: WAColors.grey,
-    height: 1.2,
+    height: 36.0 / 28.4,
   );
 
   static TextStyle bodyOn(Color color) => body.copyWith(color: color);
 
-  /// Row height for list-style controls (list box rows, dropdown menu rows).
-  static double get rowHeight => body.fontSize! * body.height!;
+  static double get bodyRowHeight => body.fontSize! * body.height!;
+
+  static const String smallFamily = 'DejaVuSans';
+
+  static const TextStyle small = TextStyle(
+    fontFamily: smallFamily,
+    fontFamilyFallback: fallback,
+    package: 'wa',
+    fontWeight: FontWeight.normal,
+    fontSize: 19.2,
+    color: WAColors.grey,
+    height: 26.0 / 19.2,
+  );
+
+  static TextStyle smallOn(Color color) => small.copyWith(color: color);
+
+  static double get smallRowHeight => small.fontSize! * small.height!;
 }
 
 /// Stub for WA UI sound effects. Call sites use the data-directory-relative
@@ -75,7 +119,10 @@ class WATheme extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    Widget content = DefaultTextStyle(style: WAFonts.body, child: child);
+    Widget content = ScrollConfiguration(
+      behavior: const _WAScrollBehavior(),
+      child: DefaultTextStyle(style: WAFonts.body, child: child),
+    );
     if (background) {
       content = DecoratedBox(
         decoration: const BoxDecoration(gradient: WAColors.backgroundGradient),
@@ -86,12 +133,23 @@ class WATheme extends StatelessWidget {
   }
 }
 
+class _WAScrollBehavior extends ScrollBehavior {
+  const _WAScrollBehavior();
+
+  @override
+  Widget buildScrollbar(
+      BuildContext context, Widget child, ScrollableDetails details) {
+    return child;
+  }
+}
+
 /// Standard border widths and paddings, expressed in WA-scaled pixels.
 class WAMetrics {
   static double get borderWidth => waPx(1);
   static double get focusBorderWidth => waPx(1);
   static double get controlPadH => waPx(6);
   static double get controlPadV => waPx(3);
+  static double get cellPadH => waPx(1);
   static double get groupPad => waPx(6);
   static double get gap => waPx(4);
 }
