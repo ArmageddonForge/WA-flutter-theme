@@ -10,6 +10,7 @@ export 'src/group_box.dart';
 export 'src/label.dart';
 export 'src/list_box.dart';
 export 'src/pressable.dart';
+export 'src/table.dart';
 export 'src/radio.dart';
 export 'src/scrollbar.dart';
 export 'src/text_edit.dart';
