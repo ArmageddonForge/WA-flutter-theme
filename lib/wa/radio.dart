@@ -1,9 +1,9 @@
-import 'package:flutter/services.dart';
 import 'package:flutter/widgets.dart';
 
+import 'pressable.dart';
 import 'theme.dart';
 
-class WARadio<T> extends StatefulWidget {
+class WARadio<T> extends StatelessWidget {
   const WARadio({
     super.key,
     required this.value,
@@ -19,76 +19,47 @@ class WARadio<T> extends StatefulWidget {
   final String? label;
   final bool enabled;
 
-  @override
-  State<WARadio<T>> createState() => _WARadioState<T>();
-}
-
-class _WARadioState<T> extends State<WARadio<T>> {
-  bool _hover = false;
-  bool _pressed = false;
-
-  bool get _selected => widget.value == widget.groupValue;
+  bool get _selected => value == groupValue;
 
   void _select() {
-    if (!_selected) widget.onChanged(widget.value);
+    if (!_selected) onChanged(value);
   }
 
   @override
   Widget build(BuildContext context) {
-    final bool live = widget.enabled;
-    return MouseRegion(
-      cursor: live ? SystemMouseCursors.click : SystemMouseCursors.basic,
-      onEnter: (_) => setState(() => _hover = true),
-      onExit: (_) => setState(() => _hover = false),
-      child: GestureDetector(
-        onTapDown: live ? (_) => setState(() => _pressed = true) : null,
-        onTapUp: live ? (_) => setState(() => _pressed = false) : null,
-        onTapCancel: live ? () => setState(() => _pressed = false) : null,
-        onTap: live ? _select : null,
-        child: Focus(
-          canRequestFocus: live,
-          onKeyEvent: (FocusNode node, KeyEvent event) {
-            if (live &&
-                event is KeyDownEvent &&
-                (event.logicalKey.keyLabel == ' ' ||
-                    event.logicalKey.keyLabel == 'Enter')) {
-              _select();
-              return KeyEventResult.handled;
-            }
-            return KeyEventResult.ignored;
-          },
-          // WA doesn't actually paint radio circles — only the caption is
-          // drawn. We keep the circle for usability and mirror the
-          // checkbox's per-state visual: hover paints white border + white
-          // dot, press fills the circle grey with white outline and hides
-          // the dot, focus alone draws no visible change.
-          child: Builder(builder: (context) {
-            final Color textColor = !live
-                ? WAColors.disabledFg
-                : (_hover || _pressed)
-                    ? WAColors.white
-                    : WAColors.grey;
-            return Row(
-              mainAxisSize: MainAxisSize.min,
-              children: [
-                CustomPaint(
-                  size: Size.square(waPx(11)),
-                  painter: _RadioPainter(
-                    selected: _selected,
-                    enabled: live,
-                    hover: _hover,
-                    pressed: _pressed,
-                  ),
-                ),
-                if (widget.label != null) ...[
-                  SizedBox(width: WAMetrics.gap),
-                  Text(widget.label!, style: WAFonts.bodyOn(textColor)),
-                ],
-              ],
-            );
-          }),
-        ),
-      ),
+    return WAPressable(
+      enabled: enabled,
+      onActivate: _select,
+      // WA doesn't actually paint radio circles — only the caption is drawn.
+      // We keep the circle for usability and mirror the checkbox's per-state
+      // visual: hover paints white border + white dot, press fills the
+      // circle grey with white outline and hides the dot, focus alone draws
+      // no visible change.
+      builder: (context, hover, pressed, focused) {
+        final Color textColor = !enabled
+            ? WAColors.disabled
+            : (hover || pressed)
+                ? WAColors.white
+                : WAColors.grey;
+        return Row(
+          mainAxisSize: MainAxisSize.min,
+          children: [
+            CustomPaint(
+              size: Size.square(waPx(11)),
+              painter: _RadioPainter(
+                selected: _selected,
+                enabled: enabled,
+                hover: hover,
+                pressed: pressed,
+              ),
+            ),
+            if (label != null) ...[
+              SizedBox(width: WAMetrics.gap),
+              Text(label!, style: WAFonts.bodyOn(textColor)),
+            ],
+          ],
+        );
+      },
     );
   }
 }
@@ -128,12 +99,12 @@ class _RadioPainter extends CustomPainter {
     }
 
     final Color border = !enabled
-        ? WAColors.disabledBorder
+        ? WAColors.disabled
         : hover
             ? WAColors.white
             : WAColors.grey;
     final Color dot = !enabled
-        ? WAColors.disabledFg
+        ? WAColors.disabled
         : hover
             ? WAColors.white
             : WAColors.grey;

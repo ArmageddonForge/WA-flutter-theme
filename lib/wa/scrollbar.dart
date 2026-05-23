@@ -70,11 +70,11 @@ class _WAScrollbarState extends State<WAScrollbar> {
         canRequestFocus: live,
         onKeyEvent: (node, event) {
           if (!live || event is! KeyDownEvent) return KeyEventResult.ignored;
-          if (event.logicalKey.keyLabel == 'Arrow Left') {
+          if (event.logicalKey == LogicalKeyboardKey.arrowLeft) {
             _stepBy(-_step);
             return KeyEventResult.handled;
           }
-          if (event.logicalKey.keyLabel == 'Arrow Right') {
+          if (event.logicalKey == LogicalKeyboardKey.arrowRight) {
             _stepBy(_step);
             return KeyEventResult.handled;
           }
@@ -83,7 +83,7 @@ class _WAScrollbarState extends State<WAScrollbar> {
         child: Builder(builder: (context) {
           final bool hasFocus = Focus.of(context).hasFocus;
           final Color border = !live
-              ? WAColors.disabledBorder
+              ? WAColors.disabled
               : hasFocus
                   ? WAColors.yellow
                   : (_hover || _dragging)
@@ -169,7 +169,7 @@ class _ScrollbarButtonState extends State<_ScrollbarButton> {
       right: widget.dir == _ArrowDir.right ? side : BorderSide.none,
     );
     final Color glyph =
-        widget.enabled ? WAColors.grey : WAColors.disabledFg;
+        widget.enabled ? WAColors.grey : WAColors.disabled;
     return GestureDetector(
       onTapDown:
           widget.enabled ? (_) => setState(() => _pressed = true) : null,
@@ -266,7 +266,7 @@ class _ScrollbarTrack extends StatelessWidget {
           painter: _TrackPainter(
             t: t,
             border: border,
-            interior: enabled ? WAColors.grey : WAColors.disabledFg,
+            interior: enabled ? WAColors.grey : WAColors.disabled,
             thumb: dragging ? WAColors.white : WAColors.pink,
           ),
           size: Size(w, waPx(18)),

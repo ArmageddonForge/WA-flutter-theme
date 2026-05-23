@@ -1,9 +1,9 @@
-import 'package:flutter/services.dart';
 import 'package:flutter/widgets.dart';
 
+import 'pressable.dart';
 import 'theme.dart';
 
-class WACheckbox extends StatefulWidget {
+class WACheckbox extends StatelessWidget {
   const WACheckbox({
     super.key,
     required this.value,
@@ -19,71 +19,41 @@ class WACheckbox extends StatefulWidget {
   final String? label;
   final bool enabled;
 
-  @override
-  State<WACheckbox> createState() => _WACheckboxState();
-}
-
-class _WACheckboxState extends State<WACheckbox> {
-  bool _hover = false;
-  bool _pressed = false;
-
-  void _toggle() => widget.onChanged(widget.value != true);
+  void _toggle() => onChanged(value != true);
 
   @override
   Widget build(BuildContext context) {
-    final bool live = widget.enabled;
-    return MouseRegion(
-      cursor: live ? SystemMouseCursors.click : SystemMouseCursors.basic,
-      onEnter: (_) => setState(() => _hover = true),
-      onExit: (_) => setState(() => _hover = false),
-      child: GestureDetector(
-        onTapDown: live ? (_) => setState(() => _pressed = true) : null,
-        onTapUp: live ? (_) => setState(() => _pressed = false) : null,
-        onTapCancel: live ? () => setState(() => _pressed = false) : null,
-        onTap: live ? _toggle : null,
-        child: Focus(
-          canRequestFocus: live,
-          onKeyEvent: (FocusNode node, KeyEvent event) {
-            if (live &&
-                event is KeyDownEvent &&
-                (event.logicalKey.keyLabel == ' ' ||
-                    event.logicalKey.keyLabel == 'Enter')) {
-              _toggle();
-              return KeyEventResult.handled;
-            }
-            return KeyEventResult.ignored;
-          },
-          // WA: keyboard focus draws no visible change. Hover (Highlighted)
-          // and press (Pressed) each have distinct faces; both render
-          // caption white.
-          child: Builder(builder: (context) {
-            final bool emphasis = live && (_hover || _pressed);
-            final Color textColor = !live
-                ? WAColors.disabledFg
-                : emphasis
-                    ? WAColors.white
-                    : WAColors.grey;
-            return Row(
-              mainAxisSize: MainAxisSize.min,
-              children: [
-                CustomPaint(
-                  size: Size.square(waPx(10)),
-                  painter: _CheckboxPainter(
-                    value: widget.value,
-                    enabled: live,
-                    hover: _hover,
-                    pressed: _pressed,
-                  ),
-                ),
-                if (widget.label != null) ...[
-                  SizedBox(width: WAMetrics.gap),
-                  Text(widget.label!, style: WAFonts.bodyOn(textColor)),
-                ],
-              ],
-            );
-          }),
-        ),
-      ),
+    return WAPressable(
+      enabled: enabled,
+      onActivate: _toggle,
+      // Keyboard focus draws no visible change; hover (Highlighted) and press
+      // (Pressed) each have distinct faces and both render the caption white.
+      builder: (context, hover, pressed, focused) {
+        final bool emphasis = enabled && (hover || pressed);
+        final Color textColor = !enabled
+            ? WAColors.disabled
+            : emphasis
+                ? WAColors.white
+                : WAColors.grey;
+        return Row(
+          mainAxisSize: MainAxisSize.min,
+          children: [
+            CustomPaint(
+              size: Size.square(waPx(10)),
+              painter: _CheckboxPainter(
+                value: value,
+                enabled: enabled,
+                hover: hover,
+                pressed: pressed,
+              ),
+            ),
+            if (label != null) ...[
+              SizedBox(width: WAMetrics.gap),
+              Text(label!, style: WAFonts.bodyOn(textColor)),
+            ],
+          ],
+        );
+      },
     );
   }
 }
@@ -105,12 +75,13 @@ class _CheckboxPainter extends CustomPainter {
   void paint(Canvas canvas, Size size) {
     final double bw = waPx(1);
     final Color border = !enabled
-        ? WAColors.disabledBorder
+        ? WAColors.disabled
         : (hover || pressed)
             ? WAColors.white
             : WAColors.grey;
-    final Color tickColor =
-        !enabled ? WAColors.disabledFg : (hover ? WAColors.white : WAColors.grey);
+    final Color tickColor = !enabled
+        ? WAColors.disabled
+        : (hover ? WAColors.white : WAColors.grey);
 
     final Rect outer = Rect.fromLTWH(
       bw / 2,

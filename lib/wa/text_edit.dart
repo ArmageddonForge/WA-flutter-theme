@@ -130,13 +130,13 @@ class _WATextEditState extends State<WATextEdit> {
     final bool live = widget.enabled;
     final bool hasFocus = focusNode.hasFocus;
     final Color borderColor = !live
-        ? WAColors.disabledBorder
+        ? WAColors.disabled
         : hasFocus
             ? WAColors.yellow
             : _hover
                 ? WAColors.white
                 : WAColors.grey;
-    final Color textColor = !live ? WAColors.disabledFg : WAColors.white;
+    final Color textColor = !live ? WAColors.disabled : WAColors.white;
     return MouseRegion(
       cursor: live ? SystemMouseCursors.text : SystemMouseCursors.basic,
       onEnter: (_) => setState(() => _hover = true),

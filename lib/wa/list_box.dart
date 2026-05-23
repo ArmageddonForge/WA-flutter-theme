@@ -33,13 +33,13 @@ class _WAListBoxState extends State<WAListBox> {
       canRequestFocus: live,
       onKeyEvent: (node, event) {
         if (!live || event is! KeyDownEvent) return KeyEventResult.ignored;
-        if (event.logicalKey.keyLabel == 'Arrow Down') {
+        if (event.logicalKey == LogicalKeyboardKey.arrowDown) {
           final int next =
               (widget.selectedIndex + 1).clamp(0, widget.items.length - 1);
           if (next != widget.selectedIndex) widget.onSelected(next);
           return KeyEventResult.handled;
         }
-        if (event.logicalKey.keyLabel == 'Arrow Up') {
+        if (event.logicalKey == LogicalKeyboardKey.arrowUp) {
           final int next =
               (widget.selectedIndex - 1).clamp(0, widget.items.length - 1);
           if (next != widget.selectedIndex) widget.onSelected(next);
@@ -51,8 +51,7 @@ class _WAListBoxState extends State<WAListBox> {
         final bool hasFocus = Focus.of(context).hasFocus;
         // Outer border is always grey in WA, regardless of focus or hover.
         // Per-row keyboard focus is shown by a dotted grey rect (see below).
-        final Color border =
-            live ? WAColors.grey : WAColors.disabledBorder;
+        final Color border = live ? WAColors.grey : WAColors.disabled;
         return Container(
           width: widget.width,
           height: widget.height,
@@ -62,14 +61,14 @@ class _WAListBoxState extends State<WAListBox> {
           ),
           child: ListView.builder(
             itemCount: widget.items.length,
-            itemExtent: WAFonts.body.fontSize! * WAFonts.body.height!,
+            itemExtent: WAFonts.rowHeight,
             padding: EdgeInsets.zero,
             itemBuilder: (context, i) {
               final bool selected = i == widget.selectedIndex;
               final Color bg = selected
-                  ? (live ? WAColors.selectionRed : WAColors.disabledFg)
+                  ? (live ? WAColors.selectionRed : WAColors.disabled)
                   : WAColors.darkBlue;
-              final Color fg = !live ? WAColors.disabledFg : WAColors.white;
+              final Color fg = !live ? WAColors.disabled : WAColors.white;
               return MouseRegion(
                 cursor: live
                     ? SystemMouseCursors.click

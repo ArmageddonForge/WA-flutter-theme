@@ -1,5 +1,6 @@
 import 'package:flutter/widgets.dart';
 
+import 'pressable.dart';
 import 'theme.dart';
 
 class WADropdown extends StatefulWidget {
@@ -23,9 +24,7 @@ class WADropdown extends StatefulWidget {
 }
 
 class _WADropdownState extends State<WADropdown> {
-  bool _hover = false;
   bool _open = false;
-  bool _pressed = false;
   OverlayEntry? _overlay;
   final LayerLink _link = LayerLink();
   final GlobalKey _anchorKey = GlobalKey();
@@ -91,103 +90,86 @@ class _WADropdownState extends State<WADropdown> {
 
   @override
   Widget build(BuildContext context) {
-    final bool live = widget.enabled;
-    return MouseRegion(
-      cursor: live ? SystemMouseCursors.click : SystemMouseCursors.basic,
-      onEnter: (_) => setState(() => _hover = true),
-      onExit: (_) => setState(() => _hover = false),
-      child: GestureDetector(
-        onTapDown: live ? (_) => setState(() => _pressed = true) : null,
-        onTapUp: live ? (_) => setState(() => _pressed = false) : null,
-        onTapCancel: live ? () => setState(() => _pressed = false) : null,
-        onTap: live ? _toggle : null,
-        child: Focus(
-          focusNode: _focusNode,
-          canRequestFocus: live,
-          child: Builder(builder: (context) {
-            final bool hasFocus = Focus.of(context).hasFocus;
-            // Opening the dropdown drops the anchor back to Normal; Active
-            // is "keyboard focus with list closed".
-            final bool active = hasFocus && !_open;
-            final Color border = !live
-                ? WAColors.disabledBorder
-                : active
-                    ? WAColors.yellow
-                    : _hover
-                        ? WAColors.white
-                        : WAColors.grey;
-            // Caption is grey at rest, white only when focused (Active).
-            // Hover does not promote the caption.
-            final Color textColor = !live
-                ? WAColors.disabledFg
-                : active
+    return WAPressable(
+      enabled: widget.enabled,
+      onActivate: _toggle,
+      focusNode: _focusNode,
+      builder: (context, hover, pressed, focused) {
+        // Opening the dropdown drops the anchor back to Normal; Active is
+        // "keyboard focus with list closed".
+        final bool active = focused && !_open;
+        final bool live = widget.enabled;
+        final Color border = !live
+            ? WAColors.disabled
+            : active
+                ? WAColors.yellow
+                : hover
                     ? WAColors.white
                     : WAColors.grey;
-            // Drop-button arrow is independent of caption: grey at rest,
-            // white on hover or press; cell stays opaque black even when the
-            // anchor face is dark blue.
-            final Color chevronColor = !live
-                ? WAColors.disabledFg
-                : (_hover || _pressed)
-                    ? WAColors.white
-                    : WAColors.grey;
-            final Color interior =
-                live && active ? WAColors.darkBlue : WAColors.black;
-            return CompositedTransformTarget(
-              link: _link,
-              child: Container(
-                key: _anchorKey,
-                width: widget.width,
-                decoration: BoxDecoration(
-                  color: interior,
-                  border: Border.all(
-                    color: border,
-                    width: WAMetrics.borderWidth,
+        // Caption is grey at rest, white only when focused (Active). Hover
+        // does not promote the caption.
+        final Color textColor = !live
+            ? WAColors.disabled
+            : active
+                ? WAColors.white
+                : WAColors.grey;
+        // Drop-button arrow is independent of caption: grey at rest, white
+        // on hover or press; cell stays opaque black even when the anchor
+        // face is dark blue.
+        final Color chevronColor = !live
+            ? WAColors.disabled
+            : (hover || pressed)
+                ? WAColors.white
+                : WAColors.grey;
+        final Color interior =
+            live && active ? WAColors.darkBlue : WAColors.black;
+        return CompositedTransformTarget(
+          link: _link,
+          child: Container(
+            key: _anchorKey,
+            width: widget.width,
+            decoration: BoxDecoration(
+              color: interior,
+              border: Border.all(color: border, width: WAMetrics.borderWidth),
+            ),
+            child: IntrinsicHeight(
+              child: Row(
+                children: [
+                  Expanded(
+                    child: Padding(
+                      padding: EdgeInsets.symmetric(
+                        horizontal: WAMetrics.controlPadH,
+                        vertical: WAMetrics.controlPadV,
+                      ),
+                      child: Text(
+                        widget.items[widget.selectedIndex],
+                        style: WAFonts.bodyOn(textColor),
+                        overflow: TextOverflow.ellipsis,
+                      ),
+                    ),
                   ),
-                ),
-                child: IntrinsicHeight(
-                  child: Row(
-                    children: [
-                      Expanded(
-                        child: Padding(
-                          padding: EdgeInsets.symmetric(
-                            horizontal: WAMetrics.controlPadH,
-                            vertical: WAMetrics.controlPadV,
-                          ),
-                          child: Text(
-                            widget.items[widget.selectedIndex],
-                            style: WAFonts.bodyOn(textColor),
-                            overflow: TextOverflow.ellipsis,
-                          ),
+                  Container(width: WAMetrics.borderWidth, color: border),
+                  Container(
+                    color: WAColors.black,
+                    padding: EdgeInsets.symmetric(
+                      horizontal: WAMetrics.controlPadH,
+                    ),
+                    child: Center(
+                      child: Transform.translate(
+                        offset: Offset(0, pressed ? waPx(1) : 0),
+                        child: CustomPaint(
+                          size: Size(waPx(7), waPx(4)),
+                          painter: _ChevronPainter(chevronColor),
                         ),
                       ),
-                      Container(
-                        width: WAMetrics.borderWidth,
-                        color: border,
-                      ),
-                      Container(
-                        color: WAColors.black,
-                        padding: EdgeInsets.symmetric(
-                          horizontal: WAMetrics.controlPadH,
-                        ),
-                        child: Center(
-                          child: Transform.translate(
-                            offset: Offset(0, _pressed ? waPx(1) : 0),
-                            child: CustomPaint(
-                              size: Size(waPx(7), waPx(4)),
-                              painter: _ChevronPainter(chevronColor),
-                            ),
-                          ),
-                        ),
-                      ),
-                    ],
+                    ),
                   ),
-                ),
+                ],
               ),
-            );
-          }),
-        ),
-      ),
+            ),
+          ),
+        );
+      },
     );
   }
 }
@@ -214,7 +196,6 @@ class _DropdownMenuState extends State<_DropdownMenu> {
 
   @override
   Widget build(BuildContext context) {
-    final double rowHeight = WAFonts.body.fontSize! * WAFonts.body.height!;
     return Container(
       width: widget.width,
       decoration: BoxDecoration(
@@ -239,13 +220,16 @@ class _DropdownMenuState extends State<_DropdownMenu> {
               behavior: HitTestBehavior.opaque,
               onTap: () => widget.onPick(i),
               child: Container(
-                height: rowHeight,
+                height: WAFonts.rowHeight,
                 color: bg,
                 padding: EdgeInsets.symmetric(
                   horizontal: WAMetrics.controlPadH,
                 ),
                 alignment: Alignment.centerLeft,
-                child: Text(widget.items[i], style: WAFonts.bodyOn(WAColors.white)),
+                child: Text(
+                  widget.items[i],
+                  style: WAFonts.bodyOn(WAColors.white),
+                ),
               ),
             ),
           );
