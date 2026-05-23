@@ -18,6 +18,8 @@ class _WAStorybookState extends State<WAStorybook> {
     _Story('Radio group', _RadioStory.new),
     _Story('Scrollbar', _ScrollbarStory.new),
     _Story('List box', _ListBoxStory.new),
+    _Story('Table', _TableStory.new),
+    _Story('Dialog', _DialogStory.new),
     _Story('Dropdown', _DropdownStory.new),
     _Story('Group box', _GroupBoxStory.new),
     _Story('Labels', _LabelStory.new),
@@ -131,22 +133,77 @@ class _ButtonStory extends StatelessWidget {
   }
 }
 
-class _TextEditStory extends StatelessWidget {
+class _TextEditStory extends StatefulWidget {
+  @override
+  State<_TextEditStory> createState() => _TextEditStoryState();
+}
+
+class _TextEditStoryState extends State<_TextEditStory> {
+  String _lengthText = '';
+  String _submitted = '';
+
   @override
   Widget build(BuildContext context) {
-    return _Variants([
-      ('default', SizedBox(width: waPx(120), child: const WATextEdit())),
-      (
-        'disabled',
+    return Column(
+      mainAxisSize: MainAxisSize.min,
+      crossAxisAlignment: CrossAxisAlignment.start,
+      children: [
+        _Variants([
+          ('default', SizedBox(width: waPx(120), child: const WATextEdit())),
+          (
+            'disabled',
+            SizedBox(
+              width: waPx(120),
+              child: const WATextEdit(
+                enabled: false,
+                initialText: 'Boggy B',
+              ),
+            ),
+          ),
+          (
+            'obscured',
+            SizedBox(
+              width: waPx(120),
+              child: const WATextEdit(obscureText: true),
+            ),
+          ),
+        ]),
+        SizedBox(height: waPx(12)),
+        const WALabel('maxLength=8', tone: WALabelTone.muted),
+        SizedBox(height: waPx(4)),
         SizedBox(
           width: waPx(120),
-          child: const WATextEdit(
-            enabled: false,
-            initialText: 'Boggy B',
+          child: WATextEdit(
+            maxLength: 8,
+            onChanged: (t) => setState(() => _lengthText = t),
           ),
         ),
-      ),
-    ]);
+        SizedBox(height: waPx(4)),
+        WALabel('length: ${_lengthText.length}', tone: WALabelTone.muted),
+        SizedBox(height: waPx(12)),
+        const WALabel('multiline', tone: WALabelTone.muted),
+        SizedBox(height: waPx(4)),
+        SizedBox(
+          width: waPx(200),
+          height: WAFonts.bodyRowHeight * 3,
+          child: const WATextEdit(multiline: true),
+        ),
+        SizedBox(height: waPx(12)),
+        const WALabel('onSubmitted', tone: WALabelTone.muted),
+        SizedBox(height: waPx(4)),
+        SizedBox(
+          width: waPx(120),
+          child: WATextEdit(
+            onSubmitted: (t) => setState(() => _submitted = t),
+          ),
+        ),
+        SizedBox(height: waPx(4)),
+        WALabel(
+          _submitted.isEmpty ? 'press Enter to submit' : 'submitted: $_submitted',
+          tone: WALabelTone.muted,
+        ),
+      ],
+    );
   }
 }
 
@@ -156,8 +213,8 @@ class _CheckboxStory extends StatefulWidget {
 }
 
 class _CheckboxStoryState extends State<_CheckboxStory> {
-  bool _a = false;
-  bool _b = true;
+  bool? _a = false;
+  bool? _b = true;
   bool? _c; // indeterminate (tri-state)
 
   @override
@@ -185,6 +242,7 @@ class _CheckboxStoryState extends State<_CheckboxStory> {
           value: _c,
           onChanged: (v) => setState(() => _c = v),
           label: 'Mixed teams',
+          tristate: true,
         ),
       ),
       (
@@ -280,6 +338,7 @@ class _ScrollbarStoryState extends State<_ScrollbarStory> {
           width: waPx(160),
           child: WAScrollbar(
             value: _continuous,
+            crossAxisSize: waPx(18),
             onChanged: (v) => setState(() => _continuous = v),
           ),
         ),
@@ -293,6 +352,7 @@ class _ScrollbarStoryState extends State<_ScrollbarStory> {
             min: 0,
             max: 10,
             divisions: 10,
+            crossAxisSize: waPx(18),
             onChanged: (v) => setState(() => _stepped = v),
           ),
         ),
@@ -303,6 +363,7 @@ class _ScrollbarStoryState extends State<_ScrollbarStory> {
           width: waPx(160),
           child: WAScrollbar(
             value: 0.7,
+            crossAxisSize: waPx(18),
             onChanged: (_) {},
             enabled: false,
           ),
@@ -318,25 +379,59 @@ class _ListBoxStory extends StatefulWidget {
 }
 
 class _ListBoxStoryState extends State<_ListBoxStory> {
-  int _index = 1;
+  int _fewIndex = 1;
+  int _someIndex = 0;
+  int _manyIndex = 0;
 
   @override
   Widget build(BuildContext context) {
-    return WAListBox(
-      width: waPx(160),
-      height: waPx(100),
-      items: const [
-        'Boggy B',
-        'Mad Cow',
-        'Major Sigh',
-        'Spadge',
-        'Charles',
-        'Pondlife',
-        'Mr Tickle',
-        'Crumb',
+    return Column(
+      mainAxisSize: MainAxisSize.min,
+      crossAxisAlignment: CrossAxisAlignment.start,
+      children: [
+        const WALabel('All visible (3 items)', tone: WALabelTone.muted),
+        SizedBox(height: waPx(2)),
+        WAListBox(
+          width: waPx(160),
+          height: waPx(100),
+          items: const ['Boggy B', 'Mad Cow', 'Spadge'],
+          selectedIndex: _fewIndex,
+          onSelected: (i) => setState(() => _fewIndex = i),
+        ),
+        SizedBox(height: waPx(10)),
+        const WALabel('Most visible (12 items)', tone: WALabelTone.muted),
+        SizedBox(height: waPx(2)),
+        WAListBox(
+          width: waPx(160),
+          height: waPx(100),
+          items: const [
+            'Boggy B',
+            'Mad Cow',
+            'Major Sigh',
+            'Spadge',
+            'Charles',
+            'Pondlife',
+            'Mr Tickle',
+            'Crumb',
+            'Pingu',
+            'Banzai',
+            'Cletus',
+            'Giblet',
+          ],
+          selectedIndex: _someIndex,
+          onSelected: (i) => setState(() => _someIndex = i),
+        ),
+        SizedBox(height: waPx(10)),
+        const WALabel('Small fraction visible (30 items)', tone: WALabelTone.muted),
+        SizedBox(height: waPx(2)),
+        WAListBox(
+          width: waPx(160),
+          height: waPx(100),
+          items: List.generate(30, (i) => 'Worm ${i + 1}'),
+          selectedIndex: _manyIndex,
+          onSelected: (i) => setState(() => _manyIndex = i),
+        ),
       ],
-      selectedIndex: _index,
-      onSelected: (i) => setState(() => _index = i),
     );
   }
 }
@@ -414,6 +509,128 @@ class _GroupBoxStory extends StatelessWidget {
             child: WALabel('Untitled group', tone: WALabelTone.muted),
           ),
         ],
+      ),
+    );
+  }
+}
+
+class _TableStory extends StatefulWidget {
+  @override
+  State<_TableStory> createState() => _TableStoryState();
+}
+
+class _TableStoryState extends State<_TableStory> {
+  int? _selected;
+  String _lastActivated = '';
+  int? _gamesSelected;
+
+  static const List<(Color, String, String)> _rows = [
+    (Color(0xFFFF0000), '#1', 'Boggy B'),
+    (Color(0xFF00AA00), '#2', 'Mad Cow'),
+    (Color(0xFF0000FF), '#3', 'Major Sigh'),
+    (Color(0xFFFF0000), '#4', 'Spadge'),
+    (Color(0xFF00AA00), '#5', 'Charles'),
+    (Color(0xFF0000FF), '#6', 'Pondlife'),
+    (Color(0xFFFF0000), '#7', 'Mr Tickle'),
+    (Color(0xFF00AA00), '#8', 'Crumb'),
+    (Color(0xFF0000FF), '#9', 'Worminator'),
+    (Color(0xFFFF0000), '#10', 'Spadgehog'),
+  ];
+
+  @override
+  Widget build(BuildContext context) {
+    return Column(
+      mainAxisSize: MainAxisSize.min,
+      crossAxisAlignment: CrossAxisAlignment.start,
+      children: [
+        WATable(
+          width: waPx(220),
+          height: waPx(120),
+          columns: [
+            WATableColumn(header: '', width: waPx(24)),
+            WATableColumn(header: 'Rank', width: waPx(48)),
+            const WATableColumn(header: 'Name', flex: 1),
+          ],
+          rowCount: _rows.length,
+          rowBuilder: (context, i) {
+            final (flagColor, rank, name) = _rows[i];
+            return WATableRow(
+              cells: [
+                Container(
+                  width: waPx(12),
+                  height: waPx(12),
+                  color: flagColor,
+                ),
+                Text(rank),
+                Text(name),
+              ],
+              color: i == 2 ? WAColors.yellow : null,
+            );
+          },
+          selectedIndex: _selected,
+          onSelected: (i) => setState(() => _selected = i),
+          onActivated: (i) =>
+              setState(() => _lastActivated = _rows[i].$3),
+        ),
+        SizedBox(height: waPx(8)),
+        WALabel(
+          _lastActivated.isEmpty
+              ? 'double-tap to activate'
+              : 'activated: $_lastActivated',
+          tone: WALabelTone.muted,
+        ),
+        SizedBox(height: waPx(16)),
+        WATable(
+          width: waPx(220),
+          height: waPx(80),
+          columns: [
+            const WATableColumn(header: 'Game', flex: 1),
+            WATableColumn(header: 'Host', width: waPx(80)),
+          ],
+          rowCount: 4,
+          rowBuilder: (context, i) {
+            const rows = [
+              ('Open, joinable', 'Boggy', WAColors.lightPink),
+              ('Open, password', 'Mad Cow', WAColors.yellow),
+              ('Closed / in progress', 'Spadge', WAColors.selectionRed),
+              ('Default (white)', 'Crumb', null),
+            ];
+            final (game, player, color) = rows[i];
+            return WATableRow(
+              cells: [Text(game), Text(player)],
+              color: color,
+            );
+          },
+          selectedIndex: _gamesSelected,
+          onSelected: (i) => setState(() => _gamesSelected = i),
+        ),
+      ],
+    );
+  }
+}
+
+class _DialogStory extends StatelessWidget {
+  @override
+  Widget build(BuildContext context) {
+    return WAButton(
+      caption: 'Open dialog',
+      onClick: () => showWADialog(
+        context: context,
+        builder: (ctx) => WADialog(
+          title: 'Host',
+          child: Column(
+            mainAxisSize: MainAxisSize.min,
+            crossAxisAlignment: CrossAxisAlignment.start,
+            children: [
+              const WALabel('Host a game'),
+              SizedBox(height: waPx(12)),
+              WAButton(
+                caption: 'OK',
+                onClick: () => Navigator.of(ctx).pop(),
+              ),
+            ],
+          ),
+        ),
       ),
     );
   }
