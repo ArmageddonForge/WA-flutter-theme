@@ -11,16 +11,27 @@ class WACheckbox extends StatelessWidget {
     required this.onChanged,
     this.label,
     this.enabled = true,
+    this.tristate = false,
   });
 
-  /// `null` is the indeterminate (tri-state) value, shown as a hashed tick.
-  /// Clicking an indeterminate checkbox transitions to `true`.
   final bool? value;
-  final ValueChanged<bool> onChanged;
+  final ValueChanged<bool?> onChanged;
   final String? label;
   final bool enabled;
+  final bool tristate;
 
-  void _toggle() => onChanged(value != true);
+  void _toggle() {
+    if (tristate) {
+      // on -> indeterminate -> off -> on
+      switch (value) {
+        case true:  onChanged(null);
+        case null:  onChanged(false);
+        case false: onChanged(true);
+      }
+    } else {
+      onChanged(value != true);
+    }
+  }
 
   @override
   Widget build(BuildContext context) {
