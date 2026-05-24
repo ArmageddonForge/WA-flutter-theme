@@ -1,4 +1,4 @@
-name: wa_example
+name: wa_storybook
 description: Storybook app exercising the wa widget library.
 publish_to: 'none'
 version: 0.1.0+1

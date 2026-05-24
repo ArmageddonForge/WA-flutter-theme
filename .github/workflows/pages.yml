@@ -27,16 +27,16 @@ jobs:
           cache: true
 
       - name: Install dependencies
-        working-directory: example
+        working-directory: storybook
         run: flutter pub get
 
       - name: Build web
-        working-directory: example
+        working-directory: storybook
         run: flutter build web --release --base-href /WA-flutter-theme/
 
       - uses: actions/upload-pages-artifact@v3
         with:
-          path: example/build/web
+          path: storybook/build/web
 
   deploy:
     needs: build
