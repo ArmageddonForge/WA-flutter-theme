@@ -2,6 +2,7 @@ import 'package:flutter/services.dart';
 import 'package:flutter/widgets.dart';
 
 import 'disable.dart';
+import 'scrollbar.dart';
 import 'theme.dart';
 
 class WAListBox extends StatefulWidget {
@@ -27,6 +28,34 @@ class WAListBox extends StatefulWidget {
 }
 
 class _WAListBoxState extends State<WAListBox> {
+  final ScrollController _scrollController = ScrollController();
+  double _scrollT = 0;
+
+  @override
+  void initState() {
+    super.initState();
+    _scrollController.addListener(_onScroll);
+  }
+
+  @override
+  void dispose() {
+    _scrollController.dispose();
+    super.dispose();
+  }
+
+  void _onScroll() {
+    final pos = _scrollController.position;
+    final double t =
+        pos.maxScrollExtent > 0 ? pos.pixels / pos.maxScrollExtent : 0;
+    if (t != _scrollT) setState(() => _scrollT = t);
+  }
+
+  void _jumpToT(double t) {
+    if (!_scrollController.hasClients) return;
+    _scrollController
+        .jumpTo(t * _scrollController.position.maxScrollExtent);
+  }
+
   @override
   Widget build(BuildContext context) {
     final bool live = widget.enabled;
@@ -54,56 +83,84 @@ class _WAListBoxState extends State<WAListBox> {
           final bool hasFocus = Focus.of(context).hasFocus;
           // Outer border is always grey in WA, regardless of focus or hover.
           // Per-row keyboard focus is shown by a dotted grey rect (see below).
+          final BorderSide borderSide = BorderSide(
+            color: WAColors.grey,
+            width: WAMetrics.borderWidth,
+          );
           return Container(
             width: widget.width,
             height: widget.height,
             decoration: BoxDecoration(
               color: WAColors.darkBlue,
-              border: Border.all(
-                color: WAColors.grey,
-                width: WAMetrics.borderWidth,
+              border: Border(
+                top: borderSide,
+                left: borderSide,
+                bottom: borderSide,
               ),
             ),
-            child: ListView.builder(
-              itemCount: widget.items.length,
-              itemExtent: WAFonts.rowHeight,
-              padding: EdgeInsets.zero,
-              itemBuilder: (context, i) {
-                final bool selected = i == widget.selectedIndex;
-                final Color bg =
-                    selected ? WAColors.selectionRed : WAColors.darkBlue;
-                return MouseRegion(
-                  cursor: live
-                      ? SystemMouseCursors.click
-                      : SystemMouseCursors.basic,
-                  child: GestureDetector(
-                    behavior: HitTestBehavior.opaque,
-                    onTapDown: live
-                        ? (_) {
-                            Focus.of(context).requestFocus();
-                            widget.onSelected(i);
-                          }
-                        : null,
-                    child: CustomPaint(
-                      foregroundPainter: (selected && hasFocus && live)
-                          ? _DottedRectPainter(WAColors.grey)
+            child: LayoutBuilder(builder: (context, constraints) {
+              final double totalHeight =
+                  widget.items.length * WAFonts.smallRowHeight;
+              final double available = constraints.maxHeight;
+              final double vf = totalHeight > 0
+                  ? (available / totalHeight).clamp(0.0, 1.0)
+                  : 1.0;
+              return Row(
+                crossAxisAlignment: CrossAxisAlignment.stretch,
+                children: [
+                  Expanded(
+                    child: ListView.builder(
+                controller: _scrollController,
+                itemCount: widget.items.length,
+                itemExtent: WAFonts.smallRowHeight,
+                padding: EdgeInsets.zero,
+                itemBuilder: (context, i) {
+                  final bool selected = i == widget.selectedIndex;
+                  final Color bg =
+                      selected ? WAColors.selectionRed : WAColors.darkBlue;
+                  return MouseRegion(
+                    cursor: live
+                        ? SystemMouseCursors.click
+                        : SystemMouseCursors.basic,
+                    child: GestureDetector(
+                      behavior: HitTestBehavior.opaque,
+                      onTapDown: live
+                          ? (_) {
+                              Focus.of(context).requestFocus();
+                              widget.onSelected(i);
+                            }
                           : null,
-                      child: Container(
-                        color: bg,
-                        padding: EdgeInsets.symmetric(
-                          horizontal: WAMetrics.controlPadH,
-                        ),
-                        alignment: Alignment.centerLeft,
-                        child: Text(
-                          widget.items[i],
-                          style: WAFonts.bodyOn(WAColors.white),
+                      child: CustomPaint(
+                        foregroundPainter: (selected && hasFocus && live)
+                            ? _DottedRectPainter(WAColors.grey)
+                            : null,
+                        child: Container(
+                          color: bg,
+                          padding: EdgeInsets.symmetric(
+                            horizontal: WAMetrics.cellPadH,
+                          ),
+                          alignment: Alignment.centerLeft,
+                          child: Text(
+                            widget.items[i],
+                            style: WAFonts.smallOn(WAColors.white),
+                          ),
                         ),
                       ),
                     ),
+                  );
+                },
+              ),
                   ),
-                );
-              },
-            ),
+                  WAScrollbar(
+                    axis: Axis.vertical,
+                    value: _scrollT,
+                    viewportFraction: vf,
+                    onChanged: _jumpToT,
+                    enabled: live,
+                  ),
+                ],
+              );
+            }),
           );
         }),
       ),
