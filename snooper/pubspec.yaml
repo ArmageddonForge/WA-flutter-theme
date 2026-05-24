@@ -1,0 +1,30 @@
+name: snooper
+description: WormNET Snooper — web-based chat client for Worms Armageddon.
+publish_to: 'none'
+version: 0.1.0+1
+
+environment:
+  sdk: '>=3.2.0-8.0.dev <4.0.0'
+  flutter: '>=3.13.0'
+
+dependencies:
+  flutter:
+    sdk: flutter
+  wa:
+    path: ../
+  http: ^1.2.0
+  web: ^1.0.0
+  shared_preferences: ^2.2.0
+
+dev_dependencies:
+  flutter_test:
+    sdk: flutter
+  flutter_lints: ^6.0.0
+
+flutter:
+  uses-material-design: false
+  assets:
+    - assets/sprites/nationflags.png
+    - assets/sprites/rankstrip.gif
+    - assets/sprites/nopadlock.gif
+    - assets/sprites/backdrop.png
