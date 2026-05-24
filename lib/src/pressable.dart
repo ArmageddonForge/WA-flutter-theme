@@ -49,43 +49,60 @@ class _WAPressableState extends State<WAPressable> {
   @override
   Widget build(BuildContext context) {
     final bool live = widget.enabled;
+    Widget inner = Focus(
+      focusNode: widget.focusNode,
+      canRequestFocus: live,
+      onKeyEvent: widget.activateOnKeyboard
+          ? (FocusNode node, KeyEvent event) {
+              if (live &&
+                  event is KeyDownEvent &&
+                  (event.logicalKey == LogicalKeyboardKey.space ||
+                      event.logicalKey == LogicalKeyboardKey.enter)) {
+                widget.onActivate();
+                return KeyEventResult.handled;
+              }
+              return KeyEventResult.ignored;
+            }
+          : null,
+      child: Builder(builder: (context) {
+        final bool focused = Focus.of(context).hasFocus;
+        return widget.builder(context, _hover, _pressed, focused);
+      }),
+    );
+
+    if (widget.activateOnDown) {
+      inner = Listener(
+        onPointerDown: live
+            ? (_) {
+                setState(() => _pressed = true);
+                widget.onActivate();
+              }
+            : null,
+        onPointerUp: live ? (_) => setState(() => _pressed = false) : null,
+        onPointerCancel: live
+            ? (_) => setState(() => _pressed = false)
+            : null,
+        child: inner,
+      );
+    } else {
+      inner = Listener(
+        onPointerDown: live
+            ? (_) => setState(() => _pressed = true)
+            : null,
+        child: GestureDetector(
+          onTap: live ? widget.onActivate : null,
+          onTapUp: live ? (_) => setState(() => _pressed = false) : null,
+          onTapCancel: live ? () => setState(() => _pressed = false) : null,
+          child: inner,
+        ),
+      );
+    }
+
     return MouseRegion(
       cursor: live ? widget.cursor : SystemMouseCursors.basic,
       onEnter: (_) => setState(() => _hover = true),
       onExit: (_) => setState(() => _hover = false),
-      child: GestureDetector(
-        onTapDown: live
-            ? (_) {
-                setState(() => _pressed = true);
-                if (widget.activateOnDown) widget.onActivate();
-              }
-            : null,
-        onTapUp: live ? (_) => setState(() => _pressed = false) : null,
-        onTapCancel: live ? () => setState(() => _pressed = false) : null,
-        // Mouse-up commit with drag-away-to-cancel: GestureDetector.onTap
-        // only fires if the release lands inside the widget.
-        onTap: live && !widget.activateOnDown ? widget.onActivate : null,
-        child: Focus(
-          focusNode: widget.focusNode,
-          canRequestFocus: live,
-          onKeyEvent: widget.activateOnKeyboard
-              ? (FocusNode node, KeyEvent event) {
-                  if (live &&
-                      event is KeyDownEvent &&
-                      (event.logicalKey == LogicalKeyboardKey.space ||
-                          event.logicalKey == LogicalKeyboardKey.enter)) {
-                    widget.onActivate();
-                    return KeyEventResult.handled;
-                  }
-                  return KeyEventResult.ignored;
-                }
-              : null,
-          child: Builder(builder: (context) {
-            final bool focused = Focus.of(context).hasFocus;
-            return widget.builder(context, _hover, _pressed, focused);
-          }),
-        ),
-      ),
+      child: inner,
     );
   }
 }

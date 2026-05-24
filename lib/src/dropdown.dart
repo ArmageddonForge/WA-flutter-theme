@@ -200,12 +200,9 @@ class _DropdownMenu extends StatelessWidget {
               selected ? WAColors.selectionRed : WAColors.darkBlue;
           return MouseRegion(
             cursor: SystemMouseCursors.click,
-            child: GestureDetector(
+            child: Listener(
               behavior: HitTestBehavior.opaque,
-              // WA fires on mouse-down (no drag-away-to-cancel). Pressing an
-              // unselected row commits the selection but keeps the menu open;
-              // pressing the already-selected row closes it.
-              onTapDown: (_) => selected ? onClose() : onSelect(i),
+              onPointerDown: (_) => selected ? onClose() : onSelect(i),
               child: Container(
                 height: WAFonts.smallRowHeight,
                 color: bg,

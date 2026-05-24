@@ -198,9 +198,9 @@ class _WATableState extends State<WATable> {
                           cursor: live
                               ? SystemMouseCursors.click
                               : SystemMouseCursors.basic,
-                          child: GestureDetector(
+                          child: Listener(
                             behavior: HitTestBehavior.opaque,
-                            onTapDown: live
+                            onPointerDown: live
                                 ? (_) => _handleTapDown(context, i)
                                 : null,
                             child: CustomPaint(
@@ -302,26 +302,28 @@ class _HeaderRowState extends State<_HeaderRow> {
         if (_hoverIndex == index) _hoverIndex = null;
         if (_pressedIndex == index) _pressedIndex = null;
       }),
-      child: GestureDetector(
-        behavior: HitTestBehavior.opaque,
-        onTapDown: (_) => setState(() => _pressedIndex = index),
-        onTapUp: (_) {
-          setState(() => _pressedIndex = null);
-          widget.onTap?.call(index);
-        },
-        onTapCancel: () => setState(() => _pressedIndex = null),
-        child: Container(
-          decoration: BoxDecoration(
-            color: bg,
-            border: Border.all(color: borderColor, width: waPx(1)),
-          ),
-          padding: EdgeInsets.only(left: waPx(3), right: waPx(2)),
-          alignment: Alignment.centerLeft,
-          child: Text(
-            col.header ?? '',
-            style: WAFonts.smallOn(WAColors.grey),
-            overflow: TextOverflow.ellipsis,
-            maxLines: 1,
+      child: Listener(
+        onPointerDown: (_) => setState(() => _pressedIndex = index),
+        child: GestureDetector(
+          behavior: HitTestBehavior.opaque,
+          onTapUp: (_) {
+            setState(() => _pressedIndex = null);
+            widget.onTap?.call(index);
+          },
+          onTapCancel: () => setState(() => _pressedIndex = null),
+          child: Container(
+            decoration: BoxDecoration(
+              color: bg,
+              border: Border.all(color: borderColor, width: waPx(1)),
+            ),
+            padding: EdgeInsets.only(left: waPx(3), right: waPx(2)),
+            alignment: Alignment.centerLeft,
+            child: Text(
+              col.header ?? '',
+              style: WAFonts.smallOn(WAColors.grey),
+              overflow: TextOverflow.ellipsis,
+              maxLines: 1,
+            ),
           ),
         ),
       ),

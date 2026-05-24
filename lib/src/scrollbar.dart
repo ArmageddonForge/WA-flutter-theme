@@ -180,13 +180,13 @@ class _ScrollbarButtonState extends State<_ScrollbarButton> {
         _hover = false;
         _pressed = false;
       }),
-      child: GestureDetector(
-        onTapDown: (_) {
+      child: Listener(
+        onPointerDown: (_) {
           setState(() => _pressed = true);
           widget.onTap();
         },
-        onTapUp: (_) => setState(() => _pressed = false),
-        onTapCancel: () => setState(() => _pressed = false),
+        onPointerUp: (_) => setState(() => _pressed = false),
+        onPointerCancel: (_) => setState(() => _pressed = false),
         child: Container(
           width: horiz ? mainSize : crossSize,
           height: horiz ? crossSize : mainSize,

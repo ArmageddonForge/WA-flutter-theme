@@ -122,9 +122,9 @@ class _WAListBoxState extends State<WAListBox> {
                     cursor: live
                         ? SystemMouseCursors.click
                         : SystemMouseCursors.basic,
-                    child: GestureDetector(
+                    child: Listener(
                       behavior: HitTestBehavior.opaque,
-                      onTapDown: live
+                      onPointerDown: live
                           ? (_) {
                               Focus.of(context).requestFocus();
                               widget.onSelected(i);
