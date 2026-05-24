@@ -26,3 +26,6 @@ flutter:
       fonts:
         - asset: assets/fonts/DejaVuSansCondensed-Bold.ttf
           weight: 700
+    - family: DejaVuSans
+      fonts:
+        - asset: assets/fonts/DejaVuSans.ttf
